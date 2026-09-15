@@ -1,1 +1,199 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>体重・運動記録</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  body { font-family: sans-serif; padding: 15px; margin: 0; background: #f0f2f5; color: #333; }
+  .card { background: #fff; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+  h2 { font-size: 1.2em; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+  label { display: block; margin: 12px 0 6px; font-weight: bold; }
+  input[type="number"], input[type="text"], input[type="date"], select { 
+    width: 100%; padding: 12px; box-sizing: border-box; 
+    border: 1px solid #ccc; border-radius: 8px; font-size: 16px; 
+  }
+  .checkbox-group { display: flex; gap: 10px; flex-wrap: wrap; }
+  .checkbox-group label { 
+    display: inline-flex; align-items: center; background: #f8f9fa; 
+    padding: 10px 15px; border-radius: 25px; border: 1px solid #ddd; 
+    font-weight: normal; margin: 0; 
+  }
+  .checkbox-group input { margin-right: 8px; transform: scale(1.2); }
+  .hidden { display: none !important; }
+  .btn-save { 
+    background: #007bff; color: #fff; border: none; padding: 15px; 
+    width: 100%; border-radius: 8px; font-size: 18px; font-weight: bold; 
+    margin-top: 20px; cursor: pointer; 
+  }
+  .btn-group { display: flex; gap: 5px; margin-bottom: 15px; }
+  .btn-group button { 
+    flex: 1; background: #e9ecef; border: none; padding: 10px; 
+    border-radius: 6px; font-size: 14px; color: #495057; 
+  }
+  .btn-group button.active { background: #007bff; color: #fff; }
+</style>
+</head>
+<body>
+
+<div class="card">
+  <h2>今日の記録</h2>
+  <label>日付</label>
+  <input type="date" id="dateInput">
+
+  <label>体重 (kg)</label>
+  <input type="number" step="0.1" id="weightInput" placeholder="例: 65.5">
+
+  <label>朝の運動 (複数選択可)</label>
+  <div class="checkbox-group">
+    <label><input type="checkbox" id="exRun" value="run">ラン</label>
+    <label><input type="checkbox" id="exMuscle" value="muscle">筋トレ</label>
+    <label><input type="checkbox" id="exNone" value="none">なし</label>
+  </div>
+  <div id="runDistWrapper" class="hidden">
+    <label>ラン距離 (km)</label>
+    <input type="number" step="0.1" id="runDistInput" placeholder="例: 10">
+  </div>
+
+  <label>昼食</label>
+  <select id="lunchSelect">
+    <option value="">選択してください</option>
+    <option value="onigiri">おにぎり</option>
+    <option value="bread">パン</option>
+    <option value="other">その他</option>
+  </select>
+  <div id="lunchCountWrapper" class="hidden">
+    <label>個数</label>
+    <input type="number" id="lunchCountInput" min="1" placeholder="例: 2">
+  </div>
+
+  <label>間食</label>
+  <div class="checkbox-group">
+    <label><input type="checkbox" id="snackCheck">あり</label>
+  </div>
+  <div id="snackMemoWrapper" class="hidden">
+    <label>間食の内容</label>
+    <input type="text" id="snackMemoInput" placeholder="例: チョコレート">
+  </div>
+
+  <button class="btn-save" onclick="saveData()">保存する</button>
+</div>
+
+<div class="card">
+  <h2>体重推移グラフ</h2>
+  <div class="btn-group">
+    <button id="btn1w" onclick="drawChart(7)">1週間</button>
+    <button id="btn1m" onclick="drawChart(30)">1ヶ月</button>
+    <button id="btn6m" onclick="drawChart(180)">半年</button>
+  </div>
+  <canvas id="weightChart"></canvas>
+</div>
+
+<script>
+  // 初期設定：今日の日付をセット
+  document.getElementById('dateInput').value = new Date().toLocaleDateString('sv-SE');
+
+  // 表示切替の連動ロジック
+  document.getElementById('exRun').addEventListener('change', (e) => {
+    document.getElementById('runDistWrapper').classList.toggle('hidden', !e.target.checked);
+    if(e.target.checked) document.getElementById('exNone').checked = false;
+  });
+  document.getElementById('exMuscle').addEventListener('change', (e) => {
+    if(e.target.checked) document.getElementById('exNone').checked = false;
+  });
+  document.getElementById('exNone').addEventListener('change', (e) => {
+    if(e.target.checked) {
+      document.getElementById('exRun').checked = false;
+      document.getElementById('exMuscle').checked = false;
+      document.getElementById('runDistWrapper').classList.add('hidden');
+    }
+  });
+
+  document.getElementById('lunchSelect').addEventListener('change', (e) => {
+    const val = e.target.value;
+    document.getElementById('lunchCountWrapper').classList.toggle('hidden', val !== 'onigiri' && val !== 'bread');
+  });
+
+  document.getElementById('snackCheck').addEventListener('change', (e) => {
+    document.getElementById('snackMemoWrapper').classList.toggle('hidden', !e.target.checked);
+  });
+
+  let chartInstance = null;
+
+  // データの保存（LocalStorage）
+  function saveData() {
+    const date = document.getElementById('dateInput').value;
+    const weight = document.getElementById('weightInput').value;
+    if(!date || !weight) { alert('日付と体重は必須です'); return; }
+
+    const data = JSON.parse(localStorage.getItem('myHealthData') || '{}');
+    data[date] = {
+      weight: parseFloat(weight),
+      run: document.getElementById('exRun').checked,
+      runKm: document.getElementById('exRun').checked ? parseFloat(document.getElementById('runDistInput').value || 0) : 0,
+      muscle: document.getElementById('exMuscle').checked,
+      lunch: document.getElementById('lunchSelect').value,
+      lunchCount: document.getElementById('lunchSelect').value === 'onigiri' || document.getElementById('lunchSelect').value === 'bread' ? parseInt(document.getElementById('lunchCountInput').value || 0) : 0,
+      snack: document.getElementById('snackCheck').checked,
+      snackMemo: document.getElementById('snackCheck').checked ? document.getElementById('snackMemoInput').value : ''
+    };
+
+    localStorage.setItem('myHealthData', JSON.stringify(data));
+    alert('記録を保存しました！');
+    drawChart(30); // 保存後は1ヶ月グラフを再描画
+  }
+
+  // グラフの描画処理
+  function drawChart(days) {
+    // ボタンのアクティブ状態の切り替え
+    ['btn1w', 'btn1m', 'btn6m'].forEach(id => document.getElementById(id).classList.remove('active'));
+    if(days === 7) document.getElementById('btn1w').classList.add('active');
+    if(days === 30) document.getElementById('btn1m').classList.add('active');
+    if(days === 180) document.getElementById('btn6m').classList.add('active');
+
+    const rawData = JSON.parse(localStorage.getItem('myHealthData') || '{}');
+    const labels = [];
+    const weights = [];
+    const today = new Date();
+    
+    // 指定日数のデータを遡って配列化
+    for(let i = days - 1; i >= 0; i--) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toLocaleDateString('sv-SE');
+      labels.push(dateStr.slice(5).replace('-', '/')); // MM/DD形式
+      weights.push(rawData[dateStr] ? rawData[dateStr].weight : null);
+    }
+
+    const ctx = document.getElementById('weightChart').getContext('2d');
+    if(chartInstance) chartInstance.destroy(); // 既存のグラフを破棄して再描画
+
+    chartInstance = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: '体重 (kg)',
+          data: weights,
+          borderColor: '#007bff',
+          backgroundColor: 'rgba(0,123,255,0.1)',
+          borderWidth: 2,
+          pointRadius: 3,
+          spanGaps: true, // データがない日を繋ぐ
+          tension: 0.1
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: false } }
+      }
+    });
+  }
+
+  // 初回読み込み時は1ヶ月分のグラフを表示
+  drawChart(30);
+</script>
+</body>
+</html>
 
