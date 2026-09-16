@@ -40,6 +40,8 @@
   .btn-group { display: flex; gap: 5px; margin-bottom: 15px; }
   .btn-group button { flex: 1; background: #e9ecef; border: none; padding: 10px; border-radius: 6px; font-size: 14px; color: #495057; }
   .btn-group button.active { background: #007bff; color: #fff; }
+  
+  #historyContainer { max-height: 350px; overflow-y: auto; font-size: 14px; padding-right: 5px; }
 </style>
 </head>
 <body>
@@ -102,6 +104,13 @@
   <button class="btn-export" onclick="exportForAI()">🤖 AI分析用にデータをコピー</button>
 </div>
 
+<div class="card">
+  <h2>過去の記録一覧</h2>
+  <div id="historyContainer">
+    <!-- ここに履歴が自動で表示されます -->
+  </div>
+</div>
+
 <script>
   document.getElementById('exRun').addEventListener('change', (e) => {
     document.getElementById('runDistWrapper').classList.toggle('hidden', !e.target.checked);
@@ -154,7 +163,6 @@
     document.getElementById('exMuscle').checked = data.muscle || false;
     document.getElementById('exNone').checked = (data.weight && !data.run && !data.muscle) ? true : false;
     
-    // 昼食の互換性処理を含む
     let lType = data.lunchType || data.lunch || 'onigiri_low';
     if(lType === 'onigiri') lType = 'onigiri_low'; 
     document.getElementById('lunchSelect').value = lType;
@@ -176,7 +184,10 @@
 
   document.getElementById('dateInput').addEventListener('change', loadDataForDate);
   document.getElementById('dateInput').value = new Date().toLocaleDateString('sv-SE');
+  
+  // 初回読み込み
   loadDataForDate();
+  updateHistoryList();
 
   function saveData() {
     const date = document.getElementById('dateInput').value;
@@ -211,7 +222,62 @@
 
     localStorage.setItem('myHealthData', JSON.stringify(data));
     alert('記録を保存しました！');
-    drawChart(30); 
+    drawChart(30);
+    updateHistoryList(); // 保存時に履歴も更新
+  }
+
+  // 履歴一覧を更新する機能
+  function updateHistoryList() {
+    const rawData = JSON.parse(localStorage.getItem('myHealthData') || '{}');
+    // 日付を降順（新しい順）に並び替え
+    const dates = Object.keys(rawData).sort((a, b) => b.localeCompare(a));
+    const container = document.getElementById('historyContainer');
+    
+    if(dates.length === 0) {
+      container.innerHTML = '<p style="color:#777;">まだ記録がありません。</p>';
+      return;
+    }
+
+    let html = '';
+    const lunchMap = {'onigiri_low':'おにぎり(低脂質)', 'onigiri_high':'おにぎり(高脂質)', 'bread':'パン', 'other':'その他'};
+    
+    dates.forEach(d => {
+      const r = rawData[d];
+      if(!r.weight) return; 
+
+      let exText = 'なし';
+      if(r.run) exText = `ラン (${r.runKm}km)`;
+      else if(r.muscle) exText = '筋トレ';
+
+      let snacksText = '';
+      if(r.snacks && r.snacks.length > 0) {
+        snacksText = r.snacks.map(s => {
+          let sTime = {'morning':'朝', 'noon':'昼', 'evening':'夕方', 'night':'夜'}[s.time] || '';
+          return `${sTime} ${s.content}(${s.cal ? s.cal + 'kcal' : ''})`;
+        }).join(', ');
+      } else {
+        snacksText = 'なし';
+      }
+
+      const tags = [];
+      if(r.lunchOut) tags.push("昼外食");
+      if(r.dinnerOut) tags.push("夜外食");
+      if(r.alcohol) tags.push("飲酒");
+      const tagsText = tags.length > 0 ? tags.join('・') : 'なし';
+
+      html += `
+        <div style="border-bottom: 1px solid #eee; padding: 12px 0;">
+          <div style="font-weight: bold; color: #007bff; margin-bottom: 4px; font-size: 15px;">${d} : ${r.weight}kg</div>
+          <div style="color: #555; line-height: 1.6;">
+            🏃 ${exText} | 🍙 ${lunchMap[r.lunchType] || ''} ${r.lunchCount || 0}個<br>
+            🍩 間食: ${snacksText}<br>
+            ⚠️ 要因: ${tagsText}
+            ${r.memo ? `<br>📝 メモ: ${r.memo}` : ''}
+          </div>
+        </div>
+      `;
+    });
+    container.innerHTML = html;
   }
 
   function exportForAI() {
@@ -267,11 +333,11 @@
       if(dayData && dayData.weight) {
         weights.push(dayData.weight);
         if(dayData.lunchOut || dayData.dinnerOut || dayData.alcohol) {
-          pointColors.push('rgba(220, 53, 69, 1)'); // 赤（増量要因あり）
+          pointColors.push('rgba(220, 53, 69, 1)'); 
         } else if (dayData.run || dayData.muscle) {
-          pointColors.push('rgba(40, 167, 69, 1)'); // 緑（運動あり）
+          pointColors.push('rgba(40, 167, 69, 1)'); 
         } else {
-          pointColors.push('#007bff'); // 青（通常）
+          pointColors.push('#007bff'); 
         }
       } else {
         weights.push(null);
