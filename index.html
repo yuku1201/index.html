@@ -17,7 +17,7 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
 .checkbox-group label:has(input:checked) .tag-rest{color:#3c4043}
 .checkbox-group label:has(input:checked#exNone){background:#f1f3f4;border-color:#80868a}
 .checkbox-group label:has(input:checked) .tag-warn{color:#c5221f}
-.checkbox-group label:has(input:checked:is(#tagLunchOut,#tagDinnerOut,#tagAlcohol)){background:#fce8e6;border-color:#ea4335}
+.checkbox-group label:has(input:checked:is(#tagLunchOut,#tagDinnerOut,#tagAlcohol,#tagSalty)){background:#fce8e6;border-color:#ea4335}
 .checkbox-group label:has(input:checked) .tag-info{color:#0056b3}
 .checkbox-group label:has(input:checked#tagHoliday){background:#cce5ff;border-color:#b8daff}
 .checkbox-group input{display:none}.hidden{display:none !important}
@@ -46,18 +46,23 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
   <div id="runDistWrapper" class="hidden"><label>距離(km)</label><input type="number" step="0.1" id="runDistInput" placeholder="例: 10"></div>
   <label>昼食</label>
   <div class="row">
-    <select id="lunchSelect"><option value="onigiri_low">おにぎり(低脂質)</option><option value="onigiri_high">おにぎり(高脂質)</option><option value="bread">パン</option><option value="other">その他</option></select>
+    <select id="lunchSelect"><option value="bento">弁当(持参)</option><option value="onigiri_low">おにぎり(低脂質)</option><option value="onigiri_high">おにぎり(高脂質)</option><option value="bread">パン</option><option value="other">その他</option></select>
     <input type="number" id="lunchCount" min="0" placeholder="個数(例:2)"><input type="text" id="lunchMemo" class="hidden" placeholder="内容(例:パスタ)">
   </div>
   <label>間食</label>
   <div id="snackContainer"></div>
   <button type="button" class="btn-add-snack" onclick="addSnackRow()">＋ 間食を追加</button>
   <label>変動要因</label>
-  <div class="checkbox-group">
+  <div class="checkbox-group" style="margin-bottom:5px;">
     <label><input type="checkbox" id="tagHoliday"><span class="tag-info">休日(祝休・有休)</span></label>
     <label><input type="checkbox" id="tagLunchOut"><span class="tag-warn">昼外食</span></label>
     <label><input type="checkbox" id="tagDinnerOut"><span class="tag-warn">夜外食</span></label>
     <label><input type="checkbox" id="tagAlcohol"><span class="tag-warn">飲酒</span></label>
+    <label><input type="checkbox" id="tagSalty"><span class="tag-warn">塩分多め</span></label>
+  </div>
+  <div style="font-size:12px;color:#007bff;text-decoration:underline;margin-bottom:10px;display:inline-block;cursor:pointer;" onclick="$('saltyHint').classList.toggle('hidden')">💡塩分多めの基準を確認</div>
+  <div id="saltyHint" class="hidden" style="font-size:12px;background:#fff3cd;color:#856404;padding:10px;border-radius:6px;margin-bottom:10px;border:1px solid #ffeeba;line-height:1.5;">
+    🍜 ラーメン・うどん等の汁 (半分以上)<br>🍛 カレー・丼もの・焼肉 (タレ多め)<br>🥓 ポテチ・ウインナー等 (食後に喉が渇く)
   </div>
   <label>メモ(任意)</label><input type="text" id="memoInput" placeholder="例: 食べすぎた等">
   <button class="btn-save" onclick="saveData()">保存する</button>
@@ -79,7 +84,7 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
   $('exRun').addEventListener('change', () => $('runDistWrapper').classList.toggle('hidden', !$('exRun').checked));
   document.querySelectorAll('#exRun,#exMuscleUpper,#exMuscleLower,#exStretch').forEach(el => el.addEventListener('change', e => { if(e.target.checked) $('exNone').checked = false; }));
   $('exNone').addEventListener('change', e => { if(e.target.checked){ $('exRun').checked=$('exMuscleUpper').checked=$('exMuscleLower').checked=$('exStretch').checked=false; $('runDistWrapper').classList.add('hidden'); }});
-  $('lunchSelect').addEventListener('change', e => { const o = e.target.value === 'other'; $('lunchCount').classList.toggle('hidden', o); $('lunchMemo').classList.toggle('hidden', !o); });
+  $('lunchSelect').addEventListener('change', e => { const o = e.target.value === 'other'; $('lunchCount').classList.toggle('hidden', o||e.target.value==='bento'); $('lunchMemo').classList.toggle('hidden', !o); });
 
   function addSnackRow(time='', cal='', content='') {
     const div = document.createElement('div'); div.className = 'snack-item';
@@ -104,14 +109,14 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
     $('exMuscleLower').checked = rd.muscleLower || false;
     $('exStretch').checked = rd.stretch || false;
     $('exNone').checked = (rd.weight && !rd.run && !rd.muscleUpper && !rd.muscleLower && !rd.stretch && !rd.muscle) ? true : false;
-    let lt = rd.lunchType || rd.lunch || 'onigiri_low'; if(lt==='onigiri') lt='onigiri_low';
+    let lt = rd.lunchType || rd.lunch || 'bento'; if(lt==='onigiri') lt='onigiri_low';
     $('lunchSelect').value = lt; $('lunchCount').value = rd.lunchCount || ''; $('lunchMemo').value = rd.lunchMemo || '';
     $('lunchSelect').dispatchEvent(new Event('change'));
     $('snackContainer').innerHTML = '';
     if(rd.snacks) rd.snacks.forEach(s => addSnackRow(s.time, s.cal, s.content));
     $('tagHoliday').checked = rd.holiday || false;
     $('tagLunchOut').checked = rd.lunchOut || false; $('tagDinnerOut').checked = rd.dinnerOut || false;
-    $('tagAlcohol').checked = rd.alcohol || false; $('memoInput').value = rd.memo || '';
+    $('tagAlcohol').checked = rd.alcohol || false; $('tagSalty').checked = rd.salty || false; $('memoInput').value = rd.memo || '';
     $('exRun').dispatchEvent(new Event('change'));
   }
   $('dateInput').addEventListener('change', loadDataForDate);
@@ -130,7 +135,7 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
     data[d] = { ...(data[d]||{}), weight:parseFloat(w), run:$('exRun').checked, runKm:$('exRun').checked?parseFloat($('runDistInput').value||0):0,
       muscleUpper:$('exMuscleUpper').checked, muscleLower:$('exMuscleLower').checked, stretch:$('exStretch').checked,
       lunchType:$('lunchSelect').value, lunchCount:parseInt($('lunchCount').value||0), lunchMemo:$('lunchMemo').value,
-      snacks, holiday:$('tagHoliday').checked, lunchOut:$('tagLunchOut').checked, dinnerOut:$('tagDinnerOut').checked, alcohol:$('tagAlcohol').checked, memo:$('memoInput').value };
+      snacks, holiday:$('tagHoliday').checked, lunchOut:$('tagLunchOut').checked, dinnerOut:$('tagDinnerOut').checked, alcohol:$('tagAlcohol').checked, salty:$('tagSalty').checked, memo:$('memoInput').value };
     localStorage.setItem('myHealthData', JSON.stringify(data));
     alert('保存しました！'); drawChart(30); updateHistoryList();
   }
@@ -148,14 +153,18 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
     $('summaryContainer').innerHTML = `📊 7日間サマリー<br><span style="color:#007bff">走行: ${runTotal.toFixed(1)}km / 平均体重: ${wCount? (wSum/wCount).toFixed(1):'--'}kg</span>`;
     
     let html='';
-    const lm = {'onigiri_low':'おにぎり(低)', 'onigiri_high':'おにぎり(高)', 'bread':'パン', 'other':'その他'};
+    const lm = {'bento':'弁当','onigiri_low':'おにぎり(低)', 'onigiri_high':'おにぎり(高)', 'bread':'パン', 'other':'その他'};
     const tm = {'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
     dates.forEach(d => {
       const r = raw[d]; if(!r.weight) return;
       const ex=[]; if(r.run) ex.push(`ラン${r.runKm}km`); if(r.muscleUpper||r.muscle) ex.push('筋(上)'); if(r.muscleLower) ex.push('筋(下)'); if(r.stretch) ex.push('ｽﾄﾚｯﾁ');
-      const lTxt = r.lunchType==='other'? `その他(${r.lunchMemo||''})` : `${lm[r.lunchType]||''}${r.lunchCount||0}個`;
+      let lTxt = '';
+      if(r.lunchType==='other') lTxt = `その他(${r.lunchMemo||''})`;
+      else if(r.lunchType==='bento') lTxt = '弁当';
+      else lTxt = `${lm[r.lunchType]||''}${r.lunchCount||0}個`;
+      
       const sTxt = (r.snacks&&r.snacks.length) ? r.snacks.map(s=>`${tm[s.time]||''} ${s.content}(${s.cal?s.cal+'kcal':''})`).join(', ') : 'なし';
-      const tgs=[]; if(r.holiday) tgs.push("休日"); if(r.lunchOut) tgs.push("昼外食"); if(r.dinnerOut) tgs.push("夜外食"); if(r.alcohol) tgs.push("飲酒");
+      const tgs=[]; if(r.holiday) tgs.push("休日"); if(r.lunchOut) tgs.push("昼外食"); if(r.dinnerOut) tgs.push("夜外食"); if(r.alcohol) tgs.push("飲酒"); if(r.salty) tgs.push("塩分多め");
       html += `<div style="border-bottom:1px solid #eee;padding:12px 0;"><div style="font-weight:bold;color:#007bff;margin-bottom:4px;">${d} : ${r.weight}kg</div>
         <div style="color:#555;line-height:1.6;">🏃 ${ex.length?ex.join(', '):'なし'} | 🍙 ${lTxt}<br>🍩 間食: ${sTxt}<br>⚠️ 要因: ${tgs.length?tgs.join('・'):'なし'}${r.memo?`<br>📝 ${r.memo}`:''}</div></div>`;
     }); $('historyContainer').innerHTML = html;
@@ -164,16 +173,19 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
   function getCSVData() {
     const raw = JSON.parse(localStorage.getItem('myHealthData') || '{}');
     const dates = Object.keys(raw).sort(); if(!dates.length) return null;
-    let csv="日付(曜日),平日/休日,体重,運動,昼食,間食,外食飲酒,メモ\n";
-    const lm={'onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
+    let csv="日付(曜日),平日/休日,体重,運動,昼食,間食,外食飲酒等,メモ\n";
+    const lm={'bento':'弁当','onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
     const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
     const dw=['日','月','火','水','木','金','土'];
     dates.forEach(d => {
       const r=raw[d], ex=[];
       if(r.run) ex.push(`ラン${r.runKm}km`); if(r.muscleUpper||r.muscle) ex.push('筋(上)'); if(r.muscleLower) ex.push('筋(下)'); if(r.stretch) ex.push('ｽﾄﾚｯﾁ');
       const sTxt = (r.snacks&&r.snacks.length) ? r.snacks.map(s=>`${tm[s.time]||s.time}:${s.content}(${s.cal}kcal)`).join(' / ') : 'なし';
-      const lTxt = r.lunchType==='other'? `その他(${r.lunchMemo||''})` : `${lm[r.lunchType]||''}${r.lunchCount||0}個`;
-      const tgs=[]; if(r.lunchOut) tgs.push("昼外"); if(r.dinnerOut) tgs.push("夜外"); if(r.alcohol) tgs.push("飲酒");
+      let lTxt = '';
+      if(r.lunchType==='other') lTxt = `その他(${r.lunchMemo||''})`;
+      else if(r.lunchType==='bento') lTxt = '弁当';
+      else lTxt = `${lm[r.lunchType]||''}${r.lunchCount||0}個`;
+      const tgs=[]; if(r.lunchOut) tgs.push("昼外"); if(r.dinnerOut) tgs.push("夜外"); if(r.alcohol) tgs.push("飲酒"); if(r.salty) tgs.push("塩分多め");
       csv+=`${d}(${dw[new Date(d).getDay()]}),${r.holiday?'休日':'平日'},${r.weight},${ex.length?ex.join('+'):'休'},${lTxt},${sTxt},${tgs.length?tgs.join('・'):'無'},${r.memo||''}\n`;
     });
     return csv;
@@ -204,7 +216,7 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
       const rd=raw[ds];
       if(rd&&rd.weight) {
         w.push(rd.weight);
-        cols.push(rd.lunchOut||rd.dinnerOut||rd.alcohol ? 'rgba(220,53,69,1)' : (rd.run||rd.muscleUpper||rd.muscleLower||rd.muscle ? 'rgba(40,167,69,1)' : 'rgba(0,123,255,1)'));
+        cols.push(rd.lunchOut||rd.dinnerOut||rd.alcohol||rd.salty ? 'rgba(220,53,69,1)' : (rd.run||rd.muscleUpper||rd.muscleLower||rd.muscle ? 'rgba(40,167,69,1)' : 'rgba(0,123,255,1)'));
       } else { w.push(null); cols.push('rgba(0,123,255,1)'); }
       let s=0, c=0;
       for(let j=0; j<7; j++) { const pd=new Date(today); pd.setDate(pd.getDate()-(i+j)); const pds=pd.toLocaleDateString('sv-SE'); if(raw[pds]&&raw[pds].weight){ s+=raw[pds].weight; c++; } }
@@ -217,10 +229,14 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
     ]}, options: { responsive:true, plugins: { legend:{display:true}, tooltip:{callbacks:{afterLabel:ctx=>{
       if(ctx.datasetIndex===0)return; const d=new Date(today); d.setDate(d.getDate()-(days-1)+ctx.dataIndex);
       const rd=raw[d.toLocaleDateString('sv-SE')]; if(!rd)return[];
-      const dtls=[]; const lm={'onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
+      const dtls=[]; const lm={'bento':'弁当','onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
       const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
-      dtls.push(`昼食: ${rd.lunchType==='other'?`その他(${rd.lunchMemo||'未入力'})`:`${lm[rd.lunchType]} ${rd.lunchCount||0}個`}`);
-      const tgs=[]; if(rd.holiday)tgs.push("休日"); if(rd.lunchOut)tgs.push("昼外食"); if(rd.dinnerOut)tgs.push("夜外食"); if(rd.alcohol)tgs.push("飲酒");
+      let lTxt = '';
+      if(rd.lunchType==='other') lTxt = `その他(${rd.lunchMemo||'未入力'})`;
+      else if(rd.lunchType==='bento') lTxt = '弁当';
+      else lTxt = `${lm[rd.lunchType]} ${rd.lunchCount||0}個`;
+      dtls.push(`昼食: ${lTxt}`);
+      const tgs=[]; if(rd.holiday)tgs.push("休日"); if(rd.lunchOut)tgs.push("昼外食"); if(rd.dinnerOut)tgs.push("夜外食"); if(rd.alcohol)tgs.push("飲酒"); if(rd.salty)tgs.push("塩分多め");
       if(tgs.length) dtls.push(`要因: ${tgs.join(', ')}`);
       if(rd.snacks) rd.snacks.forEach((s,i)=>dtls.push(`間食${i+1}: ${tm[s.time]||''} ${s.content} (${s.cal}kcal)`));
       if(rd.memo) dtls.push(`メモ: ${rd.memo}`); return dtls;
