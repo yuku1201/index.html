@@ -14,7 +14,7 @@
     width: 100%; padding: 12px; box-sizing: border-box; 
     border: 1px solid #ccc; border-radius: 8px; font-size: 16px; 
   }
-  .row { display: flex; gap: 10px; margin-bottom: 10px; }
+  .row { display: flex; gap: 10px; margin-bottom: 8px; }
   .row > * { flex: 1; }
   
   .checkbox-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
@@ -29,16 +29,16 @@
   .checkbox-group label:has(input:checked) { background: #e9ecef; border-color: #adb5bd; }
 
   .hidden { display: none !important; }
-  .btn-save { 
-    background: #007bff; color: #fff; border: none; padding: 15px; 
-    width: 100%; border-radius: 8px; font-size: 18px; font-weight: bold; 
-    margin-top: 20px; cursor: pointer; 
-  }
+  
+  .snack-item { background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee; position: relative; }
+  .btn-remove-snack { background: #dc3545; color: white; border: none; border-radius: 4px; padding: 8px 12px; margin-top: 5px; cursor: pointer; width: 100%; font-size: 14px;}
+  .btn-add-snack { background: #fff; color: #007bff; border: 2px dashed #007bff; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; margin-bottom: 10px; }
+
+  .btn-save { background: #007bff; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 18px; font-weight: bold; margin-top: 10px; cursor: pointer; }
+  .btn-export { background: #343a40; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 20px; cursor: pointer; }
+  
   .btn-group { display: flex; gap: 5px; margin-bottom: 15px; }
-  .btn-group button { 
-    flex: 1; background: #e9ecef; border: none; padding: 10px; 
-    border-radius: 6px; font-size: 14px; color: #495057; 
-  }
+  .btn-group button { flex: 1; background: #e9ecef; border: none; padding: 10px; border-radius: 6px; font-size: 14px; color: #495057; }
   .btn-group button.active { background: #007bff; color: #fff; }
 </style>
 </head>
@@ -46,7 +46,7 @@
 
 <div class="card">
   <h2>記録・修正</h2>
-  <label>日付 (変更で過去データを呼出)</label>
+  <label>日付</label>
   <input type="date" id="dateInput">
 
   <label>体重 (kg)</label>
@@ -66,28 +66,22 @@
   <label>昼食</label>
   <div class="row">
     <select id="lunchSelect">
-      <option value="onigiri">おにぎり</option>
-      <option value="bread">パン</option>
+      <option value="onigiri_low">おにぎり (低脂質:梅/鮭等)</option>
+      <option value="onigiri_high">おにぎり (高脂質:ツナマヨ等)</option>
+      <option value="bread">パン (惣菜/菓子パン)</option>
       <option value="other">その他</option>
     </select>
     <input type="number" id="lunchCount" min="0" placeholder="個数 (例: 2)">
   </div>
 
   <label>間食</label>
-  <div class="row">
-    <select id="snackTime">
-      <option value="">タイミング</option>
-      <option value="morning">朝</option>
-      <option value="noon">昼</option>
-      <option value="evening">夕方</option>
-      <option value="night">夜</option>
-    </select>
-    <input type="number" id="snackCal" min="0" placeholder="カロリー (kcal)">
-  </div>
-  <input type="text" id="snackContent" placeholder="間食の内容 (例: チョコレート)">
+  <div id="snackContainer"></div>
+  <button type="button" class="btn-add-snack" onclick="addSnackRow()">＋ 間食を追加する</button>
 
-  <label>その他の変動要因</label>
+  <label>その他の変動要因 (当てはまるものタップ)</label>
   <div class="checkbox-group">
+    <label><input type="checkbox" id="tagLunchOut"><span class="tag-warn">昼外食</span></label>
+    <label><input type="checkbox" id="tagDinnerOut"><span class="tag-warn">夜外食</span></label>
     <label><input type="checkbox" id="tagAlcohol"><span class="tag-warn">飲酒あり</span></label>
   </div>
 
@@ -98,17 +92,17 @@
 </div>
 
 <div class="card">
-  <h2>体重推移グラフ</h2>
-  <div class="btn-group">
+  <h2>データ分析</h2>
+  <canvas id="weightChart"></canvas>
+  <div class="btn-group" style="margin-top:15px;">
     <button id="btn1w" onclick="drawChart(7)">1週間</button>
     <button id="btn1m" onclick="drawChart(30)">1ヶ月</button>
     <button id="btn6m" onclick="drawChart(180)">半年</button>
   </div>
-  <canvas id="weightChart"></canvas>
+  <button class="btn-export" onclick="exportForAI()">🤖 AI分析用にデータをコピー</button>
 </div>
 
 <script>
-  // 運動の排他制御
   document.getElementById('exRun').addEventListener('change', (e) => {
     document.getElementById('runDistWrapper').classList.toggle('hidden', !e.target.checked);
     if(e.target.checked) document.getElementById('exNone').checked = false;
@@ -124,9 +118,29 @@
     }
   });
 
+  function addSnackRow(time = '', cal = '', content = '') {
+    const container = document.getElementById('snackContainer');
+    const div = document.createElement('div');
+    div.className = 'snack-item';
+    div.innerHTML = `
+      <div class="row">
+        <select class="snack-time">
+          <option value="">タイミング</option>
+          <option value="morning" ${time==='morning'?'selected':''}>朝</option>
+          <option value="noon" ${time==='noon'?'selected':''}>昼</option>
+          <option value="evening" ${time==='evening'?'selected':''}>夕方</option>
+          <option value="night" ${time==='night'?'selected':''}>夜</option>
+        </select>
+        <input type="number" class="snack-cal" min="0" placeholder="kcal" value="${cal}">
+      </div>
+      <input type="text" class="snack-content" placeholder="内容 (例: チョコレート)" value="${content}">
+      <button type="button" class="btn-remove-snack" onclick="this.parentElement.remove()">削除</button>
+    `;
+    container.appendChild(div);
+  }
+
   let chartInstance = null;
 
-  // データの読み込み
   function loadDataForDate() {
     const date = document.getElementById('dateInput').value;
     if (!date) return;
@@ -140,19 +154,23 @@
     document.getElementById('exMuscle').checked = data.muscle || false;
     document.getElementById('exNone').checked = (data.weight && !data.run && !data.muscle) ? true : false;
     
-    // 昼食・間食の読み込み（過去データの互換性含む）
-    document.getElementById('lunchSelect').value = data.lunchType || data.lunch || 'onigiri';
+    // 昼食の互換性処理を含む
+    let lType = data.lunchType || data.lunch || 'onigiri_low';
+    if(lType === 'onigiri') lType = 'onigiri_low'; 
+    document.getElementById('lunchSelect').value = lType;
     document.getElementById('lunchCount').value = data.lunchCount || '';
     
-    document.getElementById('snackTime').value = data.snackTime || '';
-    document.getElementById('snackCal').value = data.snackCal || '';
-    document.getElementById('snackContent').value = data.snackContent || data.snackMemo || '';
+    const container = document.getElementById('snackContainer');
+    container.innerHTML = ''; 
+    if (data.snacks && data.snacks.length > 0) {
+      data.snacks.forEach(s => addSnackRow(s.time, s.cal, s.content));
+    }
     
-    // タグとメモの読み込み
-    document.getElementById('tagAlcohol').checked = data.alcohol || (data.tags && data.tags.alcohol) || false;
+    document.getElementById('tagLunchOut').checked = data.lunchOut || false;
+    document.getElementById('tagDinnerOut').checked = data.dinnerOut || false;
+    document.getElementById('tagAlcohol').checked = data.alcohol || false;
     document.getElementById('memoInput').value = data.memo || '';
-
-    // UI状態の更新
+    
     document.getElementById('exRun').dispatchEvent(new Event('change'));
   }
 
@@ -160,26 +178,33 @@
   document.getElementById('dateInput').value = new Date().toLocaleDateString('sv-SE');
   loadDataForDate();
 
-  // 保存処理
   function saveData() {
     const date = document.getElementById('dateInput').value;
     const weight = document.getElementById('weightInput').value;
     if(!date || !weight) { alert('日付と体重は必須です'); return; }
 
+    const snacks = [];
+    document.querySelectorAll('.snack-item').forEach(item => {
+      const time = item.querySelector('.snack-time').value;
+      const cal = item.querySelector('.snack-cal').value;
+      const content = item.querySelector('.snack-content').value;
+      if(time || cal || content) {
+        snacks.push({ time, cal: cal ? parseInt(cal) : 0, content });
+      }
+    });
+
     const data = JSON.parse(localStorage.getItem('myHealthData') || '{}');
-    const existingData = data[date] || {};
-    
     data[date] = {
-      ...existingData,
+      ...(data[date] || {}),
       weight: parseFloat(weight),
       run: document.getElementById('exRun').checked,
       runKm: document.getElementById('exRun').checked ? parseFloat(document.getElementById('runDistInput').value || 0) : 0,
       muscle: document.getElementById('exMuscle').checked,
       lunchType: document.getElementById('lunchSelect').value,
       lunchCount: document.getElementById('lunchCount').value ? parseInt(document.getElementById('lunchCount').value) : 0,
-      snackTime: document.getElementById('snackTime').value,
-      snackCal: document.getElementById('snackCal').value ? parseInt(document.getElementById('snackCal').value) : 0,
-      snackContent: document.getElementById('snackContent').value,
+      snacks: snacks,
+      lunchOut: document.getElementById('tagLunchOut').checked,
+      dinnerOut: document.getElementById('tagDinnerOut').checked,
       alcohol: document.getElementById('tagAlcohol').checked,
       memo: document.getElementById('memoInput').value
     };
@@ -189,7 +214,37 @@
     drawChart(30); 
   }
 
-  // グラフ描画（ポップアップ詳細表示追加）
+  function exportForAI() {
+    const rawData = JSON.parse(localStorage.getItem('myHealthData') || '{}');
+    const dates = Object.keys(rawData).sort();
+    if(dates.length === 0) { alert('データがありません。'); return; }
+    
+    let csv = "日付,体重,ラン距離(km),筋トレ,昼食,昼食個数,間食,外食・飲酒,メモ\n";
+    const lunchMap = {'onigiri_low':'おにぎり(低脂質)', 'onigiri_high':'おにぎり(高脂質)', 'bread':'パン', 'other':'その他'};
+    
+    dates.forEach(d => {
+      const r = rawData[d];
+      let snacksText = "なし";
+      if(r.snacks && r.snacks.length > 0) {
+        snacksText = r.snacks.map(s => `${s.time}:${s.content}(${s.cal}kcal)`).join(' / ');
+      }
+      
+      const tags = [];
+      if(r.lunchOut) tags.push("昼外食");
+      if(r.dinnerOut) tags.push("夜外食");
+      if(r.alcohol) tags.push("飲酒");
+      const tagsText = tags.length > 0 ? tags.join('・') : 'なし';
+
+      csv += `${d},${r.weight},${r.run ? r.runKm : 0},${r.muscle ? '有' : '無'},${lunchMap[r.lunchType] || ''},${r.lunchCount || 0},${snacksText},${tagsText},${r.memo || ''}\n`;
+    });
+
+    navigator.clipboard.writeText(csv).then(() => {
+      alert("データをコピーしました！\nGeminiなどのAIに貼り付けて「このデータから体重増減の傾向を分析して」と伝えてください。");
+    }).catch(err => {
+      alert("コピーに失敗しました。ブラウザの設定を確認してください。");
+    });
+  }
+
   function drawChart(days) {
     ['btn1w', 'btn1m', 'btn6m'].forEach(id => document.getElementById(id).classList.remove('active'));
     if(days === 7) document.getElementById('btn1w').classList.add('active');
@@ -211,8 +266,8 @@
       const dayData = rawData[dateStr];
       if(dayData && dayData.weight) {
         weights.push(dayData.weight);
-        if(dayData.alcohol) {
-          pointColors.push('rgba(220, 53, 69, 1)'); // 赤（飲酒あり）
+        if(dayData.lunchOut || dayData.dinnerOut || dayData.alcohol) {
+          pointColors.push('rgba(220, 53, 69, 1)'); // 赤（増量要因あり）
         } else if (dayData.run || dayData.muscle) {
           pointColors.push('rgba(40, 167, 69, 1)'); // 緑（運動あり）
         } else {
@@ -241,12 +296,11 @@
           borderWidth: 2,
           pointRadius: 4,
           pointHoverRadius: 6,
-          spanGaps: true, 
-          tension: 0.1
+          spanGaps: true, tension: 0.1
         }]
       },
-      options: {
-        responsive: true,
+      options: { 
+        responsive: true, 
         plugins: { 
           legend: { display: false },
           tooltip: {
@@ -260,13 +314,22 @@
                 
                 let details = [];
                 if(dayData) {
+                  const lunchMap = {'onigiri_low':'おにぎり(低脂質)', 'onigiri_high':'おにぎり(高脂質)', 'bread':'パン', 'other':'その他'};
                   if(dayData.lunchType) {
-                    let lName = dayData.lunchType === 'onigiri' ? 'おにぎり' : (dayData.lunchType === 'bread' ? 'パン' : 'その他');
-                    details.push(`昼食: ${lName} ${dayData.lunchCount || 0}個`);
+                    details.push(`昼食: ${lunchMap[dayData.lunchType]} ${dayData.lunchCount || 0}個`);
                   }
-                  if(dayData.snackContent || dayData.snackCal) {
-                    let sTime = {'morning':'朝', 'noon':'昼', 'evening':'夕方', 'night':'夜'}[dayData.snackTime] || '';
-                    details.push(`間食: ${sTime} ${dayData.snackContent || ''} (${dayData.snackCal || 0}kcal)`);
+                  
+                  const tags = [];
+                  if(dayData.lunchOut) tags.push("昼外食");
+                  if(dayData.dinnerOut) tags.push("夜外食");
+                  if(dayData.alcohol) tags.push("飲酒");
+                  if(tags.length > 0) details.push(`要因: ${tags.join(', ')}`);
+
+                  if(dayData.snacks && dayData.snacks.length > 0) {
+                    dayData.snacks.forEach((s, idx) => {
+                      let sTime = {'morning':'朝', 'noon':'昼', 'evening':'夕方', 'night':'夜'}[s.time] || '';
+                      details.push(`間食${idx+1}: ${sTime} ${s.content} (${s.cal}kcal)`);
+                    });
                   }
                   if(dayData.memo) details.push(`メモ: ${dayData.memo}`);
                 }
@@ -274,7 +337,7 @@
               }
             }
           }
-        }
+        } 
       }
     });
   }
