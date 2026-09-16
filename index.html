@@ -278,7 +278,6 @@
       return;
     }
 
-    // 直近7日間のサマリー計算
     let runTotal = 0;
     let weightSum = 0;
     let weightCount = 0;
@@ -404,7 +403,6 @@
       const dateStr = d.toLocaleDateString('sv-SE');
       labels.push(dateStr.slice(5).replace('-', '/')); 
       
-      // 当日のデータ
       const dayData = rawData[dateStr];
       if(dayData && dayData.weight) {
         weights.push(dayData.weight);
@@ -420,7 +418,6 @@
         pointColors.push('rgba(0, 123, 255, 1)');
       }
 
-      // 7日移動平均の計算
       let sum = 0, count = 0;
       for(let j = 0; j < 7; j++) {
         const pDate = new Date(today);
@@ -459,3 +456,5 @@
             data: weights,
             borderColor: 'rgba(0,123,255,0.2)',
             backgroundColor: 'transparent',
+            pointBackgroundColor: pointColors,
+        
