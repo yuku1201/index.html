@@ -49,6 +49,11 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
     <select id="lunchSelect"><option value="bento">弁当(持参)</option><option value="onigiri_low">おにぎり(低脂質)</option><option value="onigiri_high">おにぎり(高脂質)</option><option value="bread">パン</option><option value="other">その他</option></select>
     <input type="number" id="lunchCount" min="0" placeholder="個数(例:2)"><input type="text" id="lunchMemo" class="hidden" placeholder="内容(例:パスタ)">
   </div>
+  <div class="row hidden" id="lunchRow2">
+    <select id="lunchSelect2"><option value="">-- 追加なし --</option><option value="bento">弁当(持参)</option><option value="onigiri_low">おにぎり(低脂質)</option><option value="onigiri_high">おにぎり(高脂質)</option><option value="bread">パン</option><option value="other">その他</option></select>
+    <input type="number" id="lunchCount2" min="0" placeholder="個数"><input type="text" id="lunchMemo2" class="hidden" placeholder="内容">
+  </div>
+  <div style="text-align:right;margin-top:-5px;margin-bottom:10px;"><span id="btnAddLunch" style="font-size:13px;color:#007bff;cursor:pointer;font-weight:bold;">＋ 組み合わせを追加</span></div>
   <label>間食</label>
   <div id="snackContainer"></div>
   <button type="button" class="btn-add-snack" onclick="addSnackRow()">＋ 間食を追加</button>
@@ -81,10 +86,16 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
 </div>
 <script>
   const $ = id => document.getElementById(id);
+  const lm = {'bento':'弁当','onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
+  const getL = (t,c,m) => !t?'':t==='other'?`その他(${m||''})`:t==='bento'?'弁当':`${lm[t]||''}${c||0}個`;
+
   $('exRun').addEventListener('change', () => $('runDistWrapper').classList.toggle('hidden', !$('exRun').checked));
   document.querySelectorAll('#exRun,#exMuscleUpper,#exMuscleLower,#exStretch').forEach(el => el.addEventListener('change', e => { if(e.target.checked) $('exNone').checked = false; }));
   $('exNone').addEventListener('change', e => { if(e.target.checked){ $('exRun').checked=$('exMuscleUpper').checked=$('exMuscleLower').checked=$('exStretch').checked=false; $('runDistWrapper').classList.add('hidden'); }});
+  
   $('lunchSelect').addEventListener('change', e => { const o = e.target.value === 'other'; $('lunchCount').classList.toggle('hidden', o||e.target.value==='bento'); $('lunchMemo').classList.toggle('hidden', !o); });
+  $('lunchSelect2').addEventListener('change', e => { const o = e.target.value === 'other'; $('lunchCount2').classList.toggle('hidden', o||['bento',''].includes(e.target.value)); $('lunchMemo2').classList.toggle('hidden', !o); });
+  $('btnAddLunch').addEventListener('click', () => { $('lunchRow2').classList.remove('hidden'); $('btnAddLunch').style.display='none'; });
 
   function addSnackRow(time='', cal='', content='') {
     const div = document.createElement('div'); div.className = 'snack-item';
@@ -112,6 +123,11 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
     let lt = rd.lunchType || rd.lunch || 'bento'; if(lt==='onigiri') lt='onigiri_low';
     $('lunchSelect').value = lt; $('lunchCount').value = rd.lunchCount || ''; $('lunchMemo').value = rd.lunchMemo || '';
     $('lunchSelect').dispatchEvent(new Event('change'));
+    
+    if(rd.lunchType2) { $('lunchRow2').classList.remove('hidden'); $('btnAddLunch').style.display='none'; $('lunchSelect2').value=rd.lunchType2; $('lunchCount2').value=rd.lunchCount2||''; $('lunchMemo2').value=rd.lunchMemo2||''; }
+    else { $('lunchRow2').classList.add('hidden'); $('btnAddLunch').style.display='inline-block'; $('lunchSelect2').value=''; $('lunchCount2').value=''; $('lunchMemo2').value=''; }
+    $('lunchSelect2').dispatchEvent(new Event('change'));
+
     $('snackContainer').innerHTML = '';
     if(rd.snacks) rd.snacks.forEach(s => addSnackRow(s.time, s.cal, s.content));
     $('tagHoliday').checked = rd.holiday || false;
@@ -135,6 +151,7 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
     data[d] = { ...(data[d]||{}), weight:parseFloat(w), run:$('exRun').checked, runKm:$('exRun').checked?parseFloat($('runDistInput').value||0):0,
       muscleUpper:$('exMuscleUpper').checked, muscleLower:$('exMuscleLower').checked, stretch:$('exStretch').checked,
       lunchType:$('lunchSelect').value, lunchCount:parseInt($('lunchCount').value||0), lunchMemo:$('lunchMemo').value,
+      lunchType2:$('lunchRow2').classList.contains('hidden')?'':$('lunchSelect2').value, lunchCount2:parseInt($('lunchCount2').value||0), lunchMemo2:$('lunchMemo2').value,
       snacks, holiday:$('tagHoliday').checked, lunchOut:$('tagLunchOut').checked, dinnerOut:$('tagDinnerOut').checked, alcohol:$('tagAlcohol').checked, salty:$('tagSalty').checked, memo:$('memoInput').value };
     localStorage.setItem('myHealthData', JSON.stringify(data));
     alert('保存しました！'); drawChart(30); updateHistoryList();
@@ -153,15 +170,13 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
     $('summaryContainer').innerHTML = `📊 7日間サマリー<br><span style="color:#007bff">走行: ${runTotal.toFixed(1)}km / 平均体重: ${wCount? (wSum/wCount).toFixed(1):'--'}kg</span>`;
     
     let html='';
-    const lm = {'bento':'弁当','onigiri_low':'おにぎり(低)', 'onigiri_high':'おにぎり(高)', 'bread':'パン', 'other':'その他'};
     const tm = {'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
     dates.forEach(d => {
       const r = raw[d]; if(!r.weight) return;
       const ex=[]; if(r.run) ex.push(`ラン${r.runKm}km`); if(r.muscleUpper||r.muscle) ex.push('筋(上)'); if(r.muscleLower) ex.push('筋(下)'); if(r.stretch) ex.push('ｽﾄﾚｯﾁ');
-      let lTxt = '';
-      if(r.lunchType==='other') lTxt = `その他(${r.lunchMemo||''})`;
-      else if(r.lunchType==='bento') lTxt = '弁当';
-      else lTxt = `${lm[r.lunchType]||''}${r.lunchCount||0}個`;
+      
+      let lTxt = getL(r.lunchType, r.lunchCount, r.lunchMemo);
+      if(r.lunchType2) lTxt += ' ＋ ' + getL(r.lunchType2, r.lunchCount2, r.lunchMemo2);
       
       const sTxt = (r.snacks&&r.snacks.length) ? r.snacks.map(s=>`${tm[s.time]||''} ${s.content}(${s.cal?s.cal+'kcal':''})`).join(', ') : 'なし';
       const tgs=[]; if(r.holiday) tgs.push("休日"); if(r.lunchOut) tgs.push("昼外食"); if(r.dinnerOut) tgs.push("夜外食"); if(r.alcohol) tgs.push("飲酒"); if(r.salty) tgs.push("塩分多め");
@@ -174,17 +189,16 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
     const raw = JSON.parse(localStorage.getItem('myHealthData') || '{}');
     const dates = Object.keys(raw).sort(); if(!dates.length) return null;
     let csv="日付(曜日),平日/休日,体重,運動,昼食,間食,外食飲酒等,メモ\n";
-    const lm={'bento':'弁当','onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
     const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
     const dw=['日','月','火','水','木','金','土'];
     dates.forEach(d => {
       const r=raw[d], ex=[];
       if(r.run) ex.push(`ラン${r.runKm}km`); if(r.muscleUpper||r.muscle) ex.push('筋(上)'); if(r.muscleLower) ex.push('筋(下)'); if(r.stretch) ex.push('ｽﾄﾚｯﾁ');
       const sTxt = (r.snacks&&r.snacks.length) ? r.snacks.map(s=>`${tm[s.time]||s.time}:${s.content}(${s.cal}kcal)`).join(' / ') : 'なし';
-      let lTxt = '';
-      if(r.lunchType==='other') lTxt = `その他(${r.lunchMemo||''})`;
-      else if(r.lunchType==='bento') lTxt = '弁当';
-      else lTxt = `${lm[r.lunchType]||''}${r.lunchCount||0}個`;
+      
+      let lTxt = getL(r.lunchType, r.lunchCount, r.lunchMemo);
+      if(r.lunchType2) lTxt += ' ＋ ' + getL(r.lunchType2, r.lunchCount2, r.lunchMemo2);
+      
       const tgs=[]; if(r.lunchOut) tgs.push("昼外"); if(r.dinnerOut) tgs.push("夜外"); if(r.alcohol) tgs.push("飲酒"); if(r.salty) tgs.push("塩分多め");
       csv+=`${d}(${dw[new Date(d).getDay()]}),${r.holiday?'休日':'平日'},${r.weight},${ex.length?ex.join('+'):'休'},${lTxt},${sTxt},${tgs.length?tgs.join('・'):'無'},${r.memo||''}\n`;
     });
@@ -229,13 +243,12 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
     ]}, options: { responsive:true, plugins: { legend:{display:true}, tooltip:{callbacks:{afterLabel:ctx=>{
       if(ctx.datasetIndex===0)return; const d=new Date(today); d.setDate(d.getDate()-(days-1)+ctx.dataIndex);
       const rd=raw[d.toLocaleDateString('sv-SE')]; if(!rd)return[];
-      const dtls=[]; const lm={'bento':'弁当','onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
-      const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
-      let lTxt = '';
-      if(rd.lunchType==='other') lTxt = `その他(${rd.lunchMemo||'未入力'})`;
-      else if(rd.lunchType==='bento') lTxt = '弁当';
-      else lTxt = `${lm[rd.lunchType]} ${rd.lunchCount||0}個`;
+      const dtls=[]; const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
+      
+      let lTxt = getL(rd.lunchType, rd.lunchCount, rd.lunchMemo);
+      if(rd.lunchType2) lTxt += ' ＋ ' + getL(rd.lunchType2, rd.lunchCount2, rd.lunchMemo2);
       dtls.push(`昼食: ${lTxt}`);
+      
       const tgs=[]; if(rd.holiday)tgs.push("休日"); if(rd.lunchOut)tgs.push("昼外食"); if(rd.dinnerOut)tgs.push("夜外食"); if(rd.alcohol)tgs.push("飲酒"); if(rd.salty)tgs.push("塩分多め");
       if(tgs.length) dtls.push(`要因: ${tgs.join(', ')}`);
       if(rd.snacks) rd.snacks.forEach((s,i)=>dtls.push(`間食${i+1}: ${tm[s.time]||''} ${s.content} (${s.cal}kcal)`));
