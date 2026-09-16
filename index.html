@@ -1,460 +1,210 @@
 <!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>体重・運動記録</title>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>体重・運動記録</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-  body { font-family: sans-serif; padding: 15px; margin: 0; background: #f0f2f5; color: #333; }
-  .card { background: #fff; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-  h2 { font-size: 1.2em; margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
-  label { display: block; margin: 12px 0 6px; font-weight: bold; font-size: 14px; color: #444; }
-  input[type="number"], input[type="text"], input[type="date"], select { 
-    width: 100%; padding: 12px; box-sizing: border-box; 
-    border: 1px solid #ccc; border-radius: 8px; font-size: 16px; 
-  }
-  .row { display: flex; gap: 10px; margin-bottom: 8px; }
-  .row > * { flex: 1; }
-  
-  .checkbox-group { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-  .checkbox-group label { 
-    display: inline-flex; align-items: center; background: #f8f9fa; 
-    padding: 10px 15px; border-radius: 25px; border: 1px solid #ddd; 
-    font-weight: normal; margin: 0; cursor: pointer; transition: 0.2s;
-  }
-  
-  /* 選択時の色を濃く、枠線を強調して視認性アップ */
-  .checkbox-group input:checked + span { font-weight: bold; }
-  .checkbox-group label:has(input:checked) { border-width: 2px; padding: 9px 14px; }
-  .checkbox-group label:has(input:checked) .tag-ex { color: #137333; }
-  .checkbox-group label:has(input:checked:is(#exRun, #exMuscleUpper, #exMuscleLower, #exStretch)) { background: #e6f4ea; border-color: #34a853; }
-  
-  .checkbox-group label:has(input:checked) .tag-rest { color: #3c4043; }
-  .checkbox-group label:has(input:checked#exNone) { background: #f1f3f4; border-color: #80868a; }
-  
-  .checkbox-group label:has(input:checked) .tag-warn { color: #c5221f; }
-  .checkbox-group label:has(input:checked:is(#tagLunchOut, #tagDinnerOut, #tagAlcohol)) { background: #fce8e6; border-color: #ea4335; }
-  
-  .checkbox-group input { display: none; } 
-
-  .hidden { display: none !important; }
-  
-  .snack-item { background: #f8f9fa; padding: 15px 12px 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee; position: relative; }
-  .btn-remove-snack { position: absolute; top: -5px; right: -5px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-  .btn-add-snack { background: #fff; color: #007bff; border: 2px dashed #007bff; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; margin-bottom: 10px; }
-
-  .btn-save { background: #007bff; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 18px; font-weight: bold; margin-top: 10px; cursor: pointer; }
-  .btn-export { background: #343a40; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 20px; cursor: pointer; }
-  
-  .btn-group { display: flex; gap: 5px; margin-bottom: 15px; }
-  .btn-group button { flex: 1; background: #e9ecef; border: none; padding: 10px; border-radius: 6px; font-size: 14px; color: #495057; }
-  .btn-group button.active { background: #007bff; color: #fff; }
-  
-  #historyContainer { max-height: 350px; overflow-y: auto; font-size: 14px; padding-right: 5px; }
-  #summaryContainer { background: #eef2f5; padding: 12px; border-radius: 8px; margin-bottom: 15px; text-align: center; color: #333; font-weight: bold; border: 1px solid #dce3e9; }
-</style>
-</head>
+body{font-family:sans-serif;padding:15px;margin:0;background:#f0f2f5;color:#333}
+.card{background:#fff;padding:20px;border-radius:12px;margin-bottom:20px;box-shadow:0 4px 6px rgba(0,0,0,0.05)}
+h2{font-size:1.2em;margin-top:0;border-bottom:2px solid #eee;padding-bottom:10px}
+label{display:block;margin:12px 0 6px;font-weight:bold;font-size:14px;color:#444}
+input[type="number"],input[type="text"],input[type="date"],select{width:100%;padding:12px;box-sizing:border-box;border:1px solid #ccc;border-radius:8px;font-size:16px}
+.row{display:flex;gap:10px;margin-bottom:8px}.row > *{flex:1}
+.checkbox-group{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.checkbox-group label{display:inline-flex;align-items:center;background:#f8f9fa;padding:10px 15px;border-radius:25px;border:1px solid #ddd;font-weight:normal;margin:0;cursor:pointer;transition:0.2s}
+.checkbox-group input:checked + span{font-weight:bold}
+.checkbox-group label:has(input:checked){border-width:2px;padding:9px 14px}
+.checkbox-group label:has(input:checked) .tag-ex{color:#137333}
+.checkbox-group label:has(input:checked:is(#exRun,#exMuscleUpper,#exMuscleLower,#exStretch)){background:#e6f4ea;border-color:#34a853}
+.checkbox-group label:has(input:checked) .tag-rest{color:#3c4043}
+.checkbox-group label:has(input:checked#exNone){background:#f1f3f4;border-color:#80868a}
+.checkbox-group label:has(input:checked) .tag-warn{color:#c5221f}
+.checkbox-group label:has(input:checked:is(#tagLunchOut,#tagDinnerOut,#tagAlcohol)){background:#fce8e6;border-color:#ea4335}
+.checkbox-group input{display:none}.hidden{display:none !important}
+.snack-item{background:#f8f9fa;padding:15px 12px 12px;border-radius:8px;margin-bottom:10px;border:1px solid #eee;position:relative}
+.btn-remove-snack{position:absolute;top:-5px;right:-5px;background:#dc3545;color:white;border:none;border-radius:50%;width:24px;height:24px;font-size:12px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+.btn-add-snack{background:#fff;color:#007bff;border:2px dashed #007bff;padding:10px;border-radius:8px;cursor:pointer;width:100%;font-weight:bold;margin-bottom:10px}
+.btn-save{background:#007bff;color:#fff;border:none;padding:15px;width:100%;border-radius:8px;font-size:18px;font-weight:bold;margin-top:10px;cursor:pointer}
+.btn-export{background:#343a40;color:#fff;border:none;padding:15px;width:100%;border-radius:8px;font-size:16px;font-weight:bold;margin-top:20px;cursor:pointer}
+.btn-group{display:flex;gap:5px;margin-bottom:15px}.btn-group button{flex:1;background:#e9ecef;border:none;padding:10px;border-radius:6px;font-size:14px;color:#495057}.btn-group button.active{background:#007bff;color:#fff}
+#historyContainer{max-height:350px;overflow-y:auto;font-size:14px;padding-right:5px}
+#summaryContainer{background:#eef2f5;padding:12px;border-radius:8px;margin-bottom:15px;text-align:center;color:#333;font-weight:bold;border:1px solid #dce3e9}
+</style></head>
 <body>
-
 <div class="card">
   <h2>記録・修正</h2>
-  <label>日付</label>
-  <input type="date" id="dateInput">
-
-  <label>体重 (kg)</label>
-  <input type="number" step="0.1" id="weightInput" placeholder="例: 65.5">
-
+  <label>日付</label><input type="date" id="dateInput">
+  <label>体重 (kg)</label><input type="number" step="0.1" id="weightInput" placeholder="例: 65.5">
   <label>運動 (複数選択可)</label>
   <div class="checkbox-group">
     <label><input type="checkbox" id="exRun" value="run"><span class="tag-ex">ラン</span></label>
     <label><input type="checkbox" id="exMuscleUpper" value="upper"><span class="tag-ex">上半身/体幹</span></label>
     <label><input type="checkbox" id="exMuscleLower" value="lower"><span class="tag-ex">下半身</span></label>
     <label><input type="checkbox" id="exStretch" value="stretch"><span class="tag-ex">ストレッチ</span></label>
-    <label><input type="checkbox" id="exNone" value="none"><span class="tag-rest">なし(休養)</span></label>
+    <label><input type="checkbox" id="exNone" value="none"><span class="tag-rest">休養</span></label>
   </div>
-  <div id="runDistWrapper" class="hidden">
-    <label>ラン距離 (km)</label>
-    <input type="number" step="0.1" id="runDistInput" placeholder="例: 10">
-  </div>
-
+  <div id="runDistWrapper" class="hidden"><label>距離(km)</label><input type="number" step="0.1" id="runDistInput" placeholder="例: 10"></div>
   <label>昼食</label>
   <div class="row">
-    <select id="lunchSelect">
-      <option value="onigiri_low">おにぎり (低脂質:梅/鮭等)</option>
-      <option value="onigiri_high">おにぎり (高脂質:ツナマヨ等)</option>
-      <option value="bread">パン (惣菜/菓子パン)</option>
-      <option value="other">その他 (麺類・定食等)</option>
-    </select>
-    <input type="number" id="lunchCount" min="0" placeholder="個数 (例: 2)">
-    <input type="text" id="lunchMemo" class="hidden" placeholder="内容 (例: パスタ)">
+    <select id="lunchSelect"><option value="onigiri_low">おにぎり(低脂質)</option><option value="onigiri_high">おにぎり(高脂質)</option><option value="bread">パン</option><option value="other">その他</option></select>
+    <input type="number" id="lunchCount" min="0" placeholder="個数(例:2)"><input type="text" id="lunchMemo" class="hidden" placeholder="内容(例:パスタ)">
   </div>
-
   <label>間食</label>
   <div id="snackContainer"></div>
-  <button type="button" class="btn-add-snack" onclick="addSnackRow()">＋ 間食を追加する</button>
-
-  <label>その他の変動要因 (当てはまるものタップ)</label>
+  <button type="button" class="btn-add-snack" onclick="addSnackRow()">＋ 間食を追加</button>
+  <label>変動要因</label>
   <div class="checkbox-group">
     <label><input type="checkbox" id="tagLunchOut"><span class="tag-warn">昼外食</span></label>
     <label><input type="checkbox" id="tagDinnerOut"><span class="tag-warn">夜外食</span></label>
-    <label><input type="checkbox" id="tagAlcohol"><span class="tag-warn">飲酒あり</span></label>
+    <label><input type="checkbox" id="tagAlcohol"><span class="tag-warn">飲酒</span></label>
   </div>
-
-  <label>一言メモ (任意)</label>
-  <input type="text" id="memoInput" placeholder="例: 飲み会で食べすぎた、等">
-
+  <label>メモ(任意)</label><input type="text" id="memoInput" placeholder="例: 食べすぎた等">
   <button class="btn-save" onclick="saveData()">保存する</button>
 </div>
-
 <div class="card">
-  <h2>データ分析</h2>
-  <canvas id="weightChart"></canvas>
-  <div class="btn-group" style="margin-top:15px;">
-    <button id="btn1w" onclick="drawChart(7)">1週間</button>
-    <button id="btn1m" onclick="drawChart(30)">1ヶ月</button>
-    <button id="btn6m" onclick="drawChart(180)">半年</button>
-  </div>
-  <button class="btn-export" onclick="exportForAI()">🤖 AI分析用にデータをコピー</button>
+  <h2>データ分析</h2><canvas id="weightChart"></canvas>
+  <div class="btn-group" style="margin-top:15px;"><button id="btn1w" onclick="drawChart(7)">1週間</button><button id="btn1m" onclick="drawChart(30)">1ヶ月</button><button id="btn6m" onclick="drawChart(180)">半年</button></div>
+  <button class="btn-export" onclick="exportForAI()">🤖 AI用にデータコピー</button>
 </div>
-
 <div class="card">
-  <h2>過去の記録一覧</h2>
-  <div id="summaryContainer">
-    <!-- サマリーが自動で表示されます -->
-  </div>
-  <div id="historyContainer">
-    <!-- ここに履歴が自動で表示されます -->
-  </div>
+  <h2>過去の記録</h2>
+  <div id="summaryContainer"></div><div id="historyContainer"></div>
 </div>
-
 <script>
-  // 運動の排他制御
-  document.getElementById('exRun').addEventListener('change', toggleRun);
-  document.querySelectorAll('#exRun, #exMuscleUpper, #exMuscleLower, #exStretch').forEach(el => {
-    el.addEventListener('change', (e) => {
-      if(e.target.checked) document.getElementById('exNone').checked = false;
-    });
-  });
-  document.getElementById('exNone').addEventListener('change', (e) => {
-    if(e.target.checked) {
-      document.getElementById('exRun').checked = false;
-      document.getElementById('exMuscleUpper').checked = false;
-      document.getElementById('exMuscleLower').checked = false;
-      document.getElementById('exStretch').checked = false;
-      toggleRun();
-    }
-  });
+  const $ = id => document.getElementById(id);
+  $('exRun').addEventListener('change', () => $('runDistWrapper').classList.toggle('hidden', !$('exRun').checked));
+  document.querySelectorAll('#exRun,#exMuscleUpper,#exMuscleLower,#exStretch').forEach(el => el.addEventListener('change', e => { if(e.target.checked) $('exNone').checked = false; }));
+  $('exNone').addEventListener('change', e => { if(e.target.checked){ $('exRun').checked=$('exMuscleUpper').checked=$('exMuscleLower').checked=$('exStretch').checked=false; $('runDistWrapper').classList.add('hidden'); }});
+  $('lunchSelect').addEventListener('change', e => { const o = e.target.value === 'other'; $('lunchCount').classList.toggle('hidden', o); $('lunchMemo').classList.toggle('hidden', !o); });
 
-  function toggleRun() {
-    document.getElementById('runDistWrapper').classList.toggle('hidden', !document.getElementById('exRun').checked);
-  }
-
-  document.getElementById('lunchSelect').addEventListener('change', (e) => {
-    const isOther = e.target.value === 'other';
-    document.getElementById('lunchCount').classList.toggle('hidden', isOther);
-    document.getElementById('lunchMemo').classList.toggle('hidden', !isOther);
-  });
-
-  function addSnackRow(time = '', cal = '', content = '') {
-    const container = document.getElementById('snackContainer');
-    const div = document.createElement('div');
-    div.className = 'snack-item';
-    div.innerHTML = `
-      <button type="button" class="btn-remove-snack" onclick="this.parentElement.remove()">✖</button>
-      <div class="row">
-        <select class="snack-time">
-          <option value="">タイミング</option>
-          <option value="morning" ${time==='morning'?'selected':''}>朝</option>
-          <option value="noon" ${time==='noon'?'selected':''}>昼</option>
-          <option value="evening" ${time==='evening'?'selected':''}>夕方</option>
-          <option value="before_dinner" ${time==='before_dinner'?'selected':''}>夕食前</option>
-          <option value="after_dinner" ${time==='after_dinner'?'selected':''}>夕食後</option>
-          <option value="night" ${time==='night'?'selected':''} style="display:none;">夜(旧)</option>
-        </select>
-        <input type="number" class="snack-cal" min="0" placeholder="kcal" value="${cal}">
-      </div>
-      <input type="text" class="snack-content" placeholder="内容 (例: チョコレート)" value="${content}">
-    `;
-    container.appendChild(div);
+  function addSnackRow(time='', cal='', content='') {
+    const div = document.createElement('div'); div.className = 'snack-item';
+    div.innerHTML = `<button type="button" class="btn-remove-snack" onclick="this.parentElement.remove()">✖</button>
+      <div class="row"><select class="snack-time">
+      <option value="">タイミング</option><option value="morning" ${time==='morning'?'selected':''}>朝</option><option value="noon" ${time==='noon'?'selected':''}>昼</option>
+      <option value="evening" ${time==='evening'?'selected':''}>夕方</option><option value="before_dinner" ${time==='before_dinner'?'selected':''}>夕食前</option>
+      <option value="after_dinner" ${time==='after_dinner'?'selected':''}>夕食後</option><option value="night" ${time==='night'?'selected':''} style="display:none;">夜(旧)</option>
+      </select><input type="number" class="snack-cal" min="0" placeholder="kcal" value="${cal}"></div>
+      <input type="text" class="snack-content" placeholder="内容 (例: チョコ)" value="${content}">`;
+    $('snackContainer').appendChild(div);
   }
 
   let chartInstance = null;
-
   function loadDataForDate() {
-    const date = document.getElementById('dateInput').value;
-    if (!date) return;
-
-    const rawData = JSON.parse(localStorage.getItem('myHealthData') || '{}');
-    const data = rawData[date] || {};
-
-    document.getElementById('weightInput').value = data.weight || '';
-    document.getElementById('exRun').checked = data.run || false;
-    document.getElementById('runDistInput').value = data.runKm || '';
-    
-    // 過去のmuscleデータを上半身として互換引き継ぎ
-    document.getElementById('exMuscleUpper').checked = data.muscleUpper || data.muscle || false;
-    document.getElementById('exMuscleLower').checked = data.muscleLower || false;
-    document.getElementById('exStretch').checked = data.stretch || false;
-    
-    document.getElementById('exNone').checked = (data.weight && !data.run && !data.muscleUpper && !data.muscleLower && !data.stretch && !data.muscle) ? true : false;
-    
-    let lType = data.lunchType || data.lunch || 'onigiri_low';
-    if(lType === 'onigiri') lType = 'onigiri_low'; 
-    document.getElementById('lunchSelect').value = lType;
-    document.getElementById('lunchCount').value = data.lunchCount || '';
-    document.getElementById('lunchMemo').value = data.lunchMemo || '';
-    document.getElementById('lunchSelect').dispatchEvent(new Event('change'));
-    
-    const container = document.getElementById('snackContainer');
-    container.innerHTML = ''; 
-    if (data.snacks && data.snacks.length > 0) {
-      data.snacks.forEach(s => addSnackRow(s.time, s.cal, s.content));
-    }
-    
-    document.getElementById('tagLunchOut').checked = data.lunchOut || false;
-    document.getElementById('tagDinnerOut').checked = data.dinnerOut || false;
-    document.getElementById('tagAlcohol').checked = data.alcohol || false;
-    document.getElementById('memoInput').value = data.memo || '';
-    
-    toggleRun();
+    const d = $('dateInput').value; if(!d) return;
+    const raw = JSON.parse(localStorage.getItem('myHealthData') || '{}');
+    const rd = raw[d] || {};
+    $('weightInput').value = rd.weight || '';
+    $('exRun').checked = rd.run || false; $('runDistInput').value = rd.runKm || '';
+    $('exMuscleUpper').checked = rd.muscleUpper || rd.muscle || false;
+    $('exMuscleLower').checked = rd.muscleLower || false;
+    $('exStretch').checked = rd.stretch || false;
+    $('exNone').checked = (rd.weight && !rd.run && !rd.muscleUpper && !rd.muscleLower && !rd.stretch && !rd.muscle) ? true : false;
+    let lt = rd.lunchType || rd.lunch || 'onigiri_low'; if(lt==='onigiri') lt='onigiri_low';
+    $('lunchSelect').value = lt; $('lunchCount').value = rd.lunchCount || ''; $('lunchMemo').value = rd.lunchMemo || '';
+    $('lunchSelect').dispatchEvent(new Event('change'));
+    $('snackContainer').innerHTML = '';
+    if(rd.snacks) rd.snacks.forEach(s => addSnackRow(s.time, s.cal, s.content));
+    $('tagLunchOut').checked = rd.lunchOut || false; $('tagDinnerOut').checked = rd.dinnerOut || false;
+    $('tagAlcohol').checked = rd.alcohol || false; $('memoInput').value = rd.memo || '';
+    $('exRun').dispatchEvent(new Event('change'));
   }
-
-  document.getElementById('dateInput').addEventListener('change', loadDataForDate);
-  document.getElementById('dateInput').value = new Date().toLocaleDateString('sv-SE');
-  
-  loadDataForDate();
-  updateHistoryList();
+  $('dateInput').addEventListener('change', loadDataForDate);
+  $('dateInput').value = new Date().toLocaleDateString('sv-SE');
+  loadDataForDate(); updateHistoryList();
 
   function saveData() {
-    const date = document.getElementById('dateInput').value;
-    const weight = document.getElementById('weightInput').value;
-    if(!date || !weight) { alert('日付と体重は必須です'); return; }
-
+    const d = $('dateInput').value, w = $('weightInput').value;
+    if(!d || !w) return alert('日付と体重は必須です');
     const snacks = [];
-    document.querySelectorAll('.snack-item').forEach(item => {
-      const time = item.querySelector('.snack-time').value;
-      const cal = item.querySelector('.snack-cal').value;
-      const content = item.querySelector('.snack-content').value;
-      if(time || cal || content) {
-        snacks.push({ time, cal: cal ? parseInt(cal) : 0, content });
-      }
+    document.querySelectorAll('.snack-item').forEach(i => {
+      const t=i.querySelector('.snack-time').value, c=i.querySelector('.snack-cal').value, txt=i.querySelector('.snack-content').value;
+      if(t||c||txt) snacks.push({time:t, cal:c?parseInt(c):0, content:txt});
     });
-
     const data = JSON.parse(localStorage.getItem('myHealthData') || '{}');
-    data[date] = {
-      ...(data[date] || {}),
-      weight: parseFloat(weight),
-      run: document.getElementById('exRun').checked,
-      runKm: document.getElementById('exRun').checked ? parseFloat(document.getElementById('runDistInput').value || 0) : 0,
-      muscleUpper: document.getElementById('exMuscleUpper').checked,
-      muscleLower: document.getElementById('exMuscleLower').checked,
-      stretch: document.getElementById('exStretch').checked,
-      lunchType: document.getElementById('lunchSelect').value,
-      lunchCount: document.getElementById('lunchCount').value ? parseInt(document.getElementById('lunchCount').value) : 0,
-      lunchMemo: document.getElementById('lunchMemo').value,
-      snacks: snacks,
-      lunchOut: document.getElementById('tagLunchOut').checked,
-      dinnerOut: document.getElementById('tagDinnerOut').checked,
-      alcohol: document.getElementById('tagAlcohol').checked,
-      memo: document.getElementById('memoInput').value
-    };
-
+    data[d] = { ...(data[d]||{}), weight:parseFloat(w), run:$('exRun').checked, runKm:$('exRun').checked?parseFloat($('runDistInput').value||0):0,
+      muscleUpper:$('exMuscleUpper').checked, muscleLower:$('exMuscleLower').checked, stretch:$('exStretch').checked,
+      lunchType:$('lunchSelect').value, lunchCount:parseInt($('lunchCount').value||0), lunchMemo:$('lunchMemo').value,
+      snacks, lunchOut:$('tagLunchOut').checked, dinnerOut:$('tagDinnerOut').checked, alcohol:$('tagAlcohol').checked, memo:$('memoInput').value };
     localStorage.setItem('myHealthData', JSON.stringify(data));
-    alert('記録を保存しました！');
-    drawChart(30);
-    updateHistoryList(); 
+    alert('保存しました！'); drawChart(30); updateHistoryList();
   }
 
   function updateHistoryList() {
-    const rawData = JSON.parse(localStorage.getItem('myHealthData') || '{}');
-    const dates = Object.keys(rawData).sort((a, b) => b.localeCompare(a));
-    const container = document.getElementById('historyContainer');
-    const summaryContainer = document.getElementById('summaryContainer');
-    
-    if(dates.length === 0) {
-      summaryContainer.innerHTML = '直近7日間のデータがありません';
-      container.innerHTML = '<p style="color:#777;">まだ記録がありません。</p>';
-      return;
-    }
-
-    let runTotal = 0;
-    let weightSum = 0;
-    let weightCount = 0;
-    const todayStr = new Date().toLocaleDateString('sv-SE');
-    const todayDate = new Date(todayStr);
-
+    const raw = JSON.parse(localStorage.getItem('myHealthData') || '{}');
+    const dates = Object.keys(raw).sort((a,b)=>b.localeCompare(a));
+    if(!dates.length) { $('summaryContainer').innerHTML='データなし'; $('historyContainer').innerHTML='<p>記録がありません</p>'; return; }
+    let runTotal=0, wSum=0, wCount=0;
+    const todayStr = new Date().toLocaleDateString('sv-SE'); const todayDate = new Date(todayStr);
     dates.forEach(d => {
-      const diffTime = Math.abs(todayDate - new Date(d));
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
-      if(diffDays <= 7) {
-        const r = rawData[d];
-        if(r.run && r.runKm) runTotal += r.runKm;
-        if(r.weight) { weightSum += r.weight; weightCount++; }
-      }
+      const diff = Math.ceil(Math.abs(todayDate - new Date(d))/(1000*60*60*24));
+      if(diff<=7 && raw[d].weight) { if(raw[d].run) runTotal+=raw[d].runKm||0; wSum+=raw[d].weight; wCount++; }
     });
-
-    const avgWeight = weightCount > 0 ? (weightSum / weightCount).toFixed(1) : '--';
-    summaryContainer.innerHTML = `📊 直近7日間のサマリー<br><span style="font-size:18px; color:#007bff;">走行距離: ${runTotal.toFixed(1)}km / 平均体重: ${avgWeight}kg</span>`;
-
-    let html = '';
-    const lunchMap = {'onigiri_low':'おにぎり(低)', 'onigiri_high':'おにぎり(高)', 'bread':'パン', 'other':'その他'};
-    const timeMap = {'morning':'朝', 'noon':'昼', 'evening':'夕方', 'before_dinner':'夕食前', 'after_dinner':'夕食後', 'night':'夜'};
+    $('summaryContainer').innerHTML = `📊 7日間サマリー<br><span style="color:#007bff">走行: ${runTotal.toFixed(1)}km / 平均体重: ${wCount? (wSum/wCount).toFixed(1):'--'}kg</span>`;
     
+    let html='';
+    const lm = {'onigiri_low':'おにぎり(低)', 'onigiri_high':'おにぎり(高)', 'bread':'パン', 'other':'その他'};
+    const tm = {'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
     dates.forEach(d => {
-      const r = rawData[d];
-      if(!r.weight) return; 
-
-      const exArr = [];
-      if(r.run) exArr.push(`ラン(${r.runKm}km)`);
-      if(r.muscleUpper || r.muscle) exArr.push('筋トレ(上)');
-      if(r.muscleLower) exArr.push('筋トレ(下)');
-      if(r.stretch) exArr.push('ストレッチ');
-      let exText = exArr.length > 0 ? exArr.join(', ') : 'なし';
-
-      let lunchText = r.lunchType === 'other' ? `その他(${r.lunchMemo || ''})` : `${lunchMap[r.lunchType] || ''} ${r.lunchCount || 0}個`;
-
-      let snacksText = 'なし';
-      if(r.snacks && r.snacks.length > 0) {
-        snacksText = r.snacks.map(s => `${timeMap[s.time] || ''} ${s.content}(${s.cal ? s.cal+'kcal' : ''})`).join(', ');
-      }
-
-      const tags = [];
-      if(r.lunchOut) tags.push("昼外食");
-      if(r.dinnerOut) tags.push("夜外食");
-      if(r.alcohol) tags.push("飲酒");
-      const tagsText = tags.length > 0 ? tags.join('・') : 'なし';
-
-      html += `
-        <div style="border-bottom: 1px solid #eee; padding: 12px 0;">
-          <div style="font-weight: bold; color: #007bff; margin-bottom: 4px; font-size: 15px;">${d} : ${r.weight}kg</div>
-          <div style="color: #555; line-height: 1.6;">
-            🏃 ${exText} | 🍙 ${lunchText}<br>
-            🍩 間食: ${snacksText}<br>
-            ⚠️ 要因: ${tagsText}
-            ${r.memo ? `<br>📝 メモ: ${r.memo}` : ''}
-          </div>
-        </div>
-      `;
-    });
-    container.innerHTML = html;
+      const r = raw[d]; if(!r.weight) return;
+      const ex=[]; if(r.run) ex.push(`ラン${r.runKm}km`); if(r.muscleUpper||r.muscle) ex.push('筋(上)'); if(r.muscleLower) ex.push('筋(下)'); if(r.stretch) ex.push('ｽﾄﾚｯﾁ');
+      const lTxt = r.lunchType==='other'? `その他(${r.lunchMemo||''})` : `${lm[r.lunchType]||''}${r.lunchCount||0}個`;
+      const sTxt = (r.snacks&&r.snacks.length) ? r.snacks.map(s=>`${tm[s.time]||''} ${s.content}(${s.cal?s.cal+'kcal':''})`).join(', ') : 'なし';
+      const tgs=[]; if(r.lunchOut) tgs.push("昼外食"); if(r.dinnerOut) tgs.push("夜外食"); if(r.alcohol) tgs.push("飲酒");
+      html += `<div style="border-bottom:1px solid #eee;padding:12px 0;"><div style="font-weight:bold;color:#007bff;margin-bottom:4px;">${d} : ${r.weight}kg</div>
+        <div style="color:#555;line-height:1.6;">🏃 ${ex.length?ex.join(', '):'なし'} | 🍙 ${lTxt}<br>🍩 間食: ${sTxt}<br>⚠️ 要因: ${tgs.length?tgs.join('・'):'なし'}${r.memo?`<br>📝 ${r.memo}`:''}</div></div>`;
+    }); $('historyContainer').innerHTML = html;
   }
 
   function exportForAI() {
-    const rawData = JSON.parse(localStorage.getItem('myHealthData') || '{}');
-    const dates = Object.keys(rawData).sort();
-    if(dates.length === 0) { alert('データがありません。'); return; }
-    
-    let csv = "日付(曜日),体重,運動,昼食詳細,間食,外食・飲酒,メモ\n";
-    const lunchMap = {'onigiri_low':'おにぎり(低)', 'onigiri_high':'おにぎり(高)', 'bread':'パン', 'other':'その他'};
-    const timeMap = {'morning':'朝', 'noon':'昼', 'evening':'夕方', 'before_dinner':'夕食前', 'after_dinner':'夕食後', 'night':'夜'};
-    const dowMap = ['日', '月', '火', '水', '木', '金', '土'];
-
+    const raw = JSON.parse(localStorage.getItem('myHealthData') || '{}');
+    const dates = Object.keys(raw).sort(); if(!dates.length) return alert('データがありません');
+    let csv="日付(曜日),体重,運動,昼食,間食,外食飲酒,メモ\n";
+    const lm={'onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
+    const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
+    const dw=['日','月','火','水','木','金','土'];
     dates.forEach(d => {
-      const r = rawData[d];
-      const dow = dowMap[new Date(d).getDay()];
-      
-      const exArr = [];
-      if(r.run) exArr.push(`ラン${r.runKm}km`);
-      if(r.muscleUpper || r.muscle) exArr.push('筋トレ上');
-      if(r.muscleLower) exArr.push('筋トレ下');
-      if(r.stretch) exArr.push('ストレッチ');
-      const exText = exArr.length > 0 ? exArr.join('+') : '休養';
-
-      let snacksText = "なし";
-      if(r.snacks && r.snacks.length > 0) {
-        snacksText = r.snacks.map(s => `${timeMap[s.time] || s.time}:${s.content}(${s.cal}kcal)`).join(' / ');
-      }
-      
-      let lunchText = r.lunchType === 'other' ? `その他(${r.lunchMemo || ''})` : `${lunchMap[r.lunchType] || ''}${r.lunchCount || 0}個`;
-      
-      const tags = [];
-      if(r.lunchOut) tags.push("昼外食");
-      if(r.dinnerOut) tags.push("夜外食");
-      if(r.alcohol) tags.push("飲酒");
-      const tagsText = tags.length > 0 ? tags.join('・') : 'なし';
-
-      csv += `${d}(${dow}),${r.weight},${exText},${lunchText},${snacksText},${tagsText},${r.memo || ''}\n`;
+      const r=raw[d], ex=[];
+      if(r.run) ex.push(`ラン${r.runKm}km`); if(r.muscleUpper||r.muscle) ex.push('筋(上)'); if(r.muscleLower) ex.push('筋(下)'); if(r.stretch) ex.push('ｽﾄﾚｯﾁ');
+      const sTxt = (r.snacks&&r.snacks.length) ? r.snacks.map(s=>`${tm[s.time]||s.time}:${s.content}(${s.cal}kcal)`).join(' / ') : 'なし';
+      const lTxt = r.lunchType==='other'? `その他(${r.lunchMemo||''})` : `${lm[r.lunchType]||''}${r.lunchCount||0}個`;
+      const tgs=[]; if(r.lunchOut) tgs.push("昼外"); if(r.dinnerOut) tgs.push("夜外"); if(r.alcohol) tgs.push("飲酒");
+      csv+=`${d}(${dw[new Date(d).getDay()]}),${r.weight},${ex.length?ex.join('+'):'休'},${lTxt},${sTxt},${tgs.length?tgs.join('・'):'無'},${r.memo||''}\n`;
     });
-
-    navigator.clipboard.writeText(csv).then(() => {
-      alert("データをコピーしました！\nGeminiなどのAIに貼り付けて「このデータから体重増減の傾向を分析して」と伝えてください。");
-    }).catch(err => {
-      alert("コピーに失敗しました。ブラウザの設定を確認してください。");
-    });
+    navigator.clipboard.writeText(csv).then(()=>alert("コピーしました！")).catch(()=>alert("コピー失敗"));
   }
 
   function drawChart(days) {
-    ['btn1w', 'btn1m', 'btn6m'].forEach(id => document.getElementById(id).classList.remove('active'));
-    if(days === 7) document.getElementById('btn1w').classList.add('active');
-    if(days === 30) document.getElementById('btn1m').classList.add('active');
-    if(days === 180) document.getElementById('btn6m').classList.add('active');
-
-    const rawData = JSON.parse(localStorage.getItem('myHealthData') || '{}');
-    const labels = [];
-    const weights = [];
-    const pointColors = [];
-    const movingAvgs = [];
-    const today = new Date();
-    
-    for(let i = days - 1; i >= 0; i--) {
-      const d = new Date(today);
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toLocaleDateString('sv-SE');
-      labels.push(dateStr.slice(5).replace('-', '/')); 
-      
-      const dayData = rawData[dateStr];
-      if(dayData && dayData.weight) {
-        weights.push(dayData.weight);
-        if(dayData.lunchOut || dayData.dinnerOut || dayData.alcohol) {
-          pointColors.push('rgba(220, 53, 69, 1)'); 
-        } else if (dayData.run || dayData.muscleUpper || dayData.muscleLower || dayData.muscle) {
-          pointColors.push('rgba(40, 167, 69, 1)'); 
-        } else {
-          pointColors.push('rgba(0, 123, 255, 1)'); 
-        }
-      } else {
-        weights.push(null);
-        pointColors.push('rgba(0, 123, 255, 1)');
-      }
-
-      let sum = 0, count = 0;
-      for(let j = 0; j < 7; j++) {
-        const pDate = new Date(today);
-        pDate.setDate(pDate.getDate() - (i + j));
-        const pStr = pDate.toLocaleDateString('sv-SE');
-        if(rawData[pStr] && rawData[pStr].weight) {
-          sum += rawData[pStr].weight;
-          count++;
-        }
-      }
-      movingAvgs.push(count > 0 ? (sum / count).toFixed(2) : null);
+    ['btn1w','btn1m','btn6m'].forEach(id => $(id).classList.remove('active'));
+    $(days===7?'btn1w':days===30?'btn1m':'btn6m').classList.add('active');
+    const raw=JSON.parse(localStorage.getItem('myHealthData') || '{}');
+    const labels=[], w=[], cols=[], mAvgs=[], today=new Date();
+    for(let i=days-1; i>=0; i--) {
+      const d=new Date(today); d.setDate(d.getDate()-i); const ds=d.toLocaleDateString('sv-SE');
+      labels.push(ds.slice(5).replace('-','/'));
+      const rd=raw[ds];
+      if(rd&&rd.weight) {
+        w.push(rd.weight);
+        cols.push(rd.lunchOut||rd.dinnerOut||rd.alcohol ? 'rgba(220,53,69,1)' : (rd.run||rd.muscleUpper||rd.muscleLower||rd.muscle ? 'rgba(40,167,69,1)' : 'rgba(0,123,255,1)'));
+      } else { w.push(null); cols.push('rgba(0,123,255,1)'); }
+      let s=0, c=0;
+      for(let j=0; j<7; j++) { const pd=new Date(today); pd.setDate(pd.getDate()-(i+j)); const pds=pd.toLocaleDateString('sv-SE'); if(raw[pds]&&raw[pds].weight){ s+=raw[pds].weight; c++; } }
+      mAvgs.push(c>0 ? (s/c).toFixed(2) : null);
     }
-
-    const ctx = document.getElementById('weightChart').getContext('2d');
-    if(chartInstance) chartInstance.destroy(); 
-
-    chartInstance = new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: '7日移動平均',
-            data: movingAvgs,
-            borderColor: 'rgba(255, 152, 0, 0.8)',
-            backgroundColor: 'transparent',
-            borderWidth: 3,
-            pointRadius: 0,
-            pointHoverRadius: 0,
-            spanGaps: true,
-            tension: 0.3,
-            order: 1
-          },
-          {
-            label: '体重 (kg)',
-            data: weights,
-            borderColor: 'rgba(0,123,255,0.2)',
-            backgroundColor: 'transparent',
-            pointBackgroundColor: pointColors,
-        
+    const ctx=$('weightChart').getContext('2d'); if(chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(ctx, { type: 'line', data: { labels, datasets: [
+      {label:'7日平均', data:mAvgs, borderColor:'rgba(255,152,0,0.8)', backgroundColor:'transparent', borderWidth:3, pointRadius:0, spanGaps:true, tension:0.3, order:1},
+      {label:'体重(kg)', data:w, borderColor:'rgba(0,123,255,0.2)', backgroundColor:'transparent', pointBackgroundColor:cols, pointBorderColor:cols, borderWidth:2, pointRadius:5, spanGaps:true, tension:0.1, order:2}
+    ]}, options: { responsive:true, plugins: { legend:{display:true}, tooltip:{callbacks:{afterLabel:ctx=>{
+      if(ctx.datasetIndex===0)return; const d=new Date(today); d.setDate(d.getDate()-(days-1)+ctx.dataIndex);
+      const rd=raw[d.toLocaleDateString('sv-SE')]; if(!rd)return[];
+      const dtls=[]; const lm={'onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
+      const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
+      dtls.push(`昼食: ${rd.lunchType==='other'?`その他(${rd.lunchMemo||'未入力'})`:`${lm[rd.lunchType]} ${rd.lunchCount||0}個`}`);
+      const tgs=[]; if(rd.lunchOut)tgs.push("昼外食"); if(rd.dinnerOut)tgs.push("夜外食"); if(rd.alcohol)tgs.push("飲酒");
+      if(tgs.length) dtls.push(`要因: ${tgs.join(', ')}`);
+      if(rd.snacks) rd.snacks.forEach((s,i)=>dtls.push(`間食${i+1}: ${tm[s.time]||''} ${s.content} (${s.cal}kcal)`));
+      if(rd.memo) dtls.push(`メモ: ${rd.memo}`); return dtls;
+    }}}}}});
+  } drawChart(30);
+</script>
+</body>
+</html>
