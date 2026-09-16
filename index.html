@@ -24,15 +24,19 @@
     font-weight: normal; margin: 0; cursor: pointer; transition: 0.2s;
   }
   .checkbox-group input:checked + span.tag-ex { color: #28a745; font-weight: bold; }
+  .checkbox-group input:checked + span.tag-rest { color: #6c757d; font-weight: bold; } /* 休養タグの色を追加 */
   .checkbox-group input:checked + span.tag-warn { color: #dc3545; font-weight: bold; }
   .checkbox-group input { display: none; } 
   .checkbox-group label:has(input:checked) { background: #e9ecef; border-color: #adb5bd; }
 
   .hidden { display: none !important; }
   
-  .snack-item { background: #f8f9fa; padding: 10px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee; position: relative; }
-  .btn-remove-snack { background: #dc3545; color: white; border: none; border-radius: 4px; padding: 8px 12px; margin-top: 5px; cursor: pointer; width: 100%; font-size: 14px;}
-  .btn-add-snack { background: #fff; color: #007bff; border: 2px dashed #007bff; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; margin-bottom: 10px; }
+  /* 間食アイテムのデザインをスッキリ改善 */
+  .snack-item { background: #f8f9fa; padding: 15px 12px 12px; border-radius: 8px; margin-bottom: 10px; border: 1px solid #eee; position: relative; }
+  .btn-remove-snack { position: absolute; top: -5px; right: -5px; background: #dc3545; color: white; border: none; border-radius: 50%; width: 24px; height: 24px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+  
+  .btn-add-snack { background: #fff; color: #007bff; border: 2px dashed #007bff; padding: 10px; border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; margin-bottom: 10px; transition: 0.2s; }
+  .btn-add-snack:active { background: #f0f8ff; }
 
   .btn-save { background: #007bff; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 18px; font-weight: bold; margin-top: 10px; cursor: pointer; }
   .btn-export { background: #343a40; color: #fff; border: none; padding: 15px; width: 100%; border-radius: 8px; font-size: 16px; font-weight: bold; margin-top: 20px; cursor: pointer; }
@@ -58,7 +62,7 @@
   <div class="checkbox-group">
     <label><input type="checkbox" id="exRun" value="run"><span class="tag-ex">ラン</span></label>
     <label><input type="checkbox" id="exMuscle" value="muscle"><span class="tag-ex">筋トレ</span></label>
-    <label><input type="checkbox" id="exNone" value="none"><span>なし(休養)</span></label>
+    <label><input type="checkbox" id="exNone" value="none"><span class="tag-rest">なし(休養)</span></label>
   </div>
   <div id="runDistWrapper" class="hidden">
     <label>ラン距離 (km)</label>
@@ -71,9 +75,11 @@
       <option value="onigiri_low">おにぎり (低脂質:梅/鮭等)</option>
       <option value="onigiri_high">おにぎり (高脂質:ツナマヨ等)</option>
       <option value="bread">パン (惣菜/菓子パン)</option>
-      <option value="other">その他</option>
+      <option value="other">その他 (麺類・定食等)</option>
     </select>
+    <!-- 個数入力と自由記載を切り替えて表示 -->
     <input type="number" id="lunchCount" min="0" placeholder="個数 (例: 2)">
+    <input type="text" id="lunchMemo" class="hidden" placeholder="内容 (例: パスタ)">
   </div>
 
   <label>間食</label>
@@ -112,6 +118,7 @@
 </div>
 
 <script>
+  // 運動の排他制御
   document.getElementById('exRun').addEventListener('change', (e) => {
     document.getElementById('runDistWrapper').classList.toggle('hidden', !e.target.checked);
     if(e.target.checked) document.getElementById('exNone').checked = false;
@@ -127,11 +134,19 @@
     }
   });
 
+  // 昼食の選択切り替え処理
+  document.getElementById('lunchSelect').addEventListener('change', (e) => {
+    const isOther = e.target.value === 'other';
+    document.getElementById('lunchCount').classList.toggle('hidden', isOther);
+    document.getElementById('lunchMemo').classList.toggle('hidden', !isOther);
+  });
+
   function addSnackRow(time = '', cal = '', content = '') {
     const container = document.getElementById('snackContainer');
     const div = document.createElement('div');
     div.className = 'snack-item';
     div.innerHTML = `
+      <button type="button" class="btn-remove-snack" onclick="this.parentElement.remove()">✖</button>
       <div class="row">
         <select class="snack-time">
           <option value="">タイミング</option>
@@ -145,7 +160,6 @@
         <input type="number" class="snack-cal" min="0" placeholder="kcal" value="${cal}">
       </div>
       <input type="text" class="snack-content" placeholder="内容 (例: チョコレート)" value="${content}">
-      <button type="button" class="btn-remove-snack" onclick="this.parentElement.remove()">削除</button>
     `;
     container.appendChild(div);
   }
@@ -169,6 +183,10 @@
     if(lType === 'onigiri') lType = 'onigiri_low'; 
     document.getElementById('lunchSelect').value = lType;
     document.getElementById('lunchCount').value = data.lunchCount || '';
+    document.getElementById('lunchMemo').value = data.lunchMemo || ''; // 自由記載の読み込み
+    
+    // UIの切り替えをトリガー
+    document.getElementById('lunchSelect').dispatchEvent(new Event('change'));
     
     const container = document.getElementById('snackContainer');
     container.innerHTML = ''; 
@@ -214,6 +232,7 @@
       muscle: document.getElementById('exMuscle').checked,
       lunchType: document.getElementById('lunchSelect').value,
       lunchCount: document.getElementById('lunchCount').value ? parseInt(document.getElementById('lunchCount').value) : 0,
+      lunchMemo: document.getElementById('lunchMemo').value,
       snacks: snacks,
       lunchOut: document.getElementById('tagLunchOut').checked,
       dinnerOut: document.getElementById('tagDinnerOut').checked,
@@ -249,6 +268,14 @@
       if(r.run) exText = `ラン (${r.runKm}km)`;
       else if(r.muscle) exText = '筋トレ';
 
+      // 昼食の表示ロジック（その他の場合は自由記載を表示）
+      let lunchText = '';
+      if(r.lunchType === 'other') {
+        lunchText = `その他 (${r.lunchMemo || '未入力'})`;
+      } else {
+        lunchText = `${lunchMap[r.lunchType] || ''} ${r.lunchCount || 0}個`;
+      }
+
       let snacksText = '';
       if(r.snacks && r.snacks.length > 0) {
         snacksText = r.snacks.map(s => {
@@ -269,7 +296,7 @@
         <div style="border-bottom: 1px solid #eee; padding: 12px 0;">
           <div style="font-weight: bold; color: #007bff; margin-bottom: 4px; font-size: 15px;">${d} : ${r.weight}kg</div>
           <div style="color: #555; line-height: 1.6;">
-            🏃 ${exText} | 🍙 ${lunchMap[r.lunchType] || ''} ${r.lunchCount || 0}個<br>
+            🏃 ${exText} | 🍙 ${lunchText}<br>
             🍩 間食: ${snacksText}<br>
             ⚠️ 要因: ${tagsText}
             ${r.memo ? `<br>📝 メモ: ${r.memo}` : ''}
@@ -285,7 +312,7 @@
     const dates = Object.keys(rawData).sort();
     if(dates.length === 0) { alert('データがありません。'); return; }
     
-    let csv = "日付,体重,ラン距離(km),筋トレ,昼食,昼食個数,間食,外食・飲酒,メモ\n";
+    let csv = "日付,体重,ラン距離(km),筋トレ,昼食詳細,間食,外食・飲酒,メモ\n";
     const lunchMap = {'onigiri_low':'おにぎり(低脂質)', 'onigiri_high':'おにぎり(高脂質)', 'bread':'パン', 'other':'その他'};
     const timeMap = {'morning':'朝', 'noon':'昼', 'evening':'夕方', 'before_dinner':'夕食前', 'after_dinner':'夕食後', 'night':'夜'};
     
@@ -296,13 +323,20 @@
         snacksText = r.snacks.map(s => `${timeMap[s.time] || s.time}:${s.content}(${s.cal}kcal)`).join(' / ');
       }
       
+      let lunchText = '';
+      if(r.lunchType === 'other') {
+        lunchText = `その他(${r.lunchMemo || ''})`;
+      } else {
+        lunchText = `${lunchMap[r.lunchType] || ''} ${r.lunchCount || 0}個`;
+      }
+      
       const tags = [];
       if(r.lunchOut) tags.push("昼外食");
       if(r.dinnerOut) tags.push("夜外食");
       if(r.alcohol) tags.push("飲酒");
       const tagsText = tags.length > 0 ? tags.join('・') : 'なし';
 
-      csv += `${d},${r.weight},${r.run ? r.runKm : 0},${r.muscle ? '有' : '無'},${lunchMap[r.lunchType] || ''},${r.lunchCount || 0},${snacksText},${tagsText},${r.memo || ''}\n`;
+      csv += `${d},${r.weight},${r.run ? r.runKm : 0},${r.muscle ? '有' : '無'},${lunchText},${snacksText},${tagsText},${r.memo || ''}\n`;
     });
 
     navigator.clipboard.writeText(csv).then(() => {
@@ -384,7 +418,9 @@
                   const lunchMap = {'onigiri_low':'おにぎり(低脂質)', 'onigiri_high':'おにぎり(高脂質)', 'bread':'パン', 'other':'その他'};
                   const timeMap = {'morning':'朝', 'noon':'昼', 'evening':'夕方', 'before_dinner':'夕食前', 'after_dinner':'夕食後', 'night':'夜'};
                   
-                  if(dayData.lunchType) {
+                  if(dayData.lunchType === 'other') {
+                    details.push(`昼食: その他 (${dayData.lunchMemo || '未入力'})`);
+                  } else if(dayData.lunchType) {
                     details.push(`昼食: ${lunchMap[dayData.lunchType]} ${dayData.lunchCount || 0}個`);
                   }
                   
