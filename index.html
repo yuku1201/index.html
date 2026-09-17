@@ -4,7 +4,7 @@
 <style>
 body{font-family:sans-serif;padding:15px;margin:0;background:#f0f2f5;color:#333}
 .card{background:#fff;padding:20px;border-radius:12px;margin-bottom:20px;box-shadow:0 4px 6px rgba(0,0,0,0.05)}
-h2{font-size:1.2em;margin-top:0;border-bottom:2px solid #eee;padding-bottom:10px}
+h2{font-size:1.2em;margin-top:0;border-bottom:2px solid #eee;padding-bottom:10px;display:flex;justify-content:space-between;align-items:center}
 label{display:block;margin:12px 0 6px;font-weight:bold;font-size:14px;color:#444}
 input[type="number"],input[type="text"],input[type="date"],select{width:100%;padding:12px;box-sizing:border-box;border:1px solid #ccc;border-radius:8px;font-size:16px}
 .row{display:flex;gap:10px;margin-bottom:8px}.row > *{flex:1}
@@ -16,7 +16,6 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
 .checkbox-group label:has(input:checked:is(#exRun,#exMuscleUpper,#exMuscleLower,#exStretch)){background:#e6f4ea;border-color:#34a853}
 .checkbox-group label:has(input:checked) .tag-rest{color:#3c4043}
 .checkbox-group label:has(input:checked#exNone){background:#f1f3f4;border-color:#80868a}
-/* 変動要因用の2列グリッドデザイン */
 .checkbox-group.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .checkbox-group.grid label{justify-content:center;padding:12px 4px;border-radius:8px;font-size:13.5px;text-align:center;letter-spacing:0.5px;}
 .checkbox-group.grid label:has(input:checked){padding:11px 3px;}
@@ -30,13 +29,23 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
 .btn-add-snack{background:#fff;color:#007bff;border:2px dashed #007bff;padding:10px;border-radius:8px;cursor:pointer;width:100%;font-weight:bold;margin-bottom:10px}
 .btn-save{background:#007bff;color:#fff;border:none;padding:15px;width:100%;border-radius:8px;font-size:18px;font-weight:bold;margin-top:10px;cursor:pointer;box-shadow:0 4px 6px rgba(0,123,255,0.2)}
 .btn-export{background:#343a40;color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
+.btn-zoom{background:#e9ecef;color:#333;border:1px solid #ccc;padding:8px;border-radius:8px;font-size:14px;cursor:pointer;width:100%;margin-top:10px;}
 .btn-group{display:flex;gap:5px;margin-bottom:15px}.btn-group button{flex:1;background:#e9ecef;border:none;padding:10px;border-radius:6px;font-size:14px;color:#495057}.btn-group button.active{background:#007bff;color:#fff}
-#historyContainer{max-height:350px;overflow-y:auto;font-size:14px;padding-right:5px}
-#summaryContainer{background:#eef2f5;padding:12px;border-radius:8px;margin-bottom:15px;text-align:center;color:#333;font-weight:bold;border:1px solid #dce3e9;line-height:1.6}
+#historyContainer{max-height:400px;overflow-y:auto;font-size:14px;padding-right:5px}
+#summaryContainer{background:#eef2f5;padding:12px;border-radius:8px;margin-bottom:15px;color:#333;border:1px solid #dce3e9;line-height:1.6}
+.bal-box{display:inline-block;padding:2px 8px;border-radius:4px;font-size:13px;margin-top:4px;}
+.bal-plus{background:#d4edda;color:#155724;border:1px solid #c3e6cb;}
+.bal-minus{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb;}
+.prog-bg{background:#dee2e6;border-radius:10px;height:12px;width:100%;margin:6px 0;overflow:hidden;}
+.prog-bar{background:#28a745;height:100%;transition:width 0.3s;}
+#streakBadge{font-size:13px;background:#17a2b8;color:#fff;padding:4px 10px;border-radius:20px;font-weight:bold;box-shadow:0 2px 4px rgba(23,162,184,0.3)}
+#chartModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:15px;box-sizing:border-box}
+.modal-content{background:#fff;width:100%;border-radius:12px;padding:20px;box-sizing:border-box;position:relative}
+.close-btn{position:absolute;top:5px;right:15px;font-size:28px;cursor:pointer;font-weight:bold;color:#666}
 </style></head>
 <body>
 <div class="card">
-  <h2>記録・修正</h2>
+  <h2>記録・修正 <span id="streakBadge">記録なし</span></h2>
   <label>日付</label><input type="date" id="dateInput">
   <label>体重 (kg)</label><input type="number" step="0.1" id="weightInput" placeholder="例: 65.5">
   <label>運動 (複数選択可)</label>
@@ -63,7 +72,6 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
   <button type="button" class="btn-add-snack" onclick="addSnackRow()">＋ 間食を追加</button>
   
   <label>変動要因 (ノイズの記録)</label>
-  <!-- グリッドレイアウトに変更 -->
   <div class="checkbox-group grid" style="margin-bottom:5px;">
     <label><input type="checkbox" id="tagHoliday"><span class="tag-info">休日(祝休・有休)</span></label>
     <label><input type="checkbox" id="tagNoBM"><span class="tag-warn">便通なし</span></label>
@@ -74,7 +82,6 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
     <label><input type="checkbox" id="tagWorkStress"><span class="tag-warn">残業/ｽﾄﾚｽ</span></label>
     <label><input type="checkbox" id="tagMusclePain"><span class="tag-warn">筋肉痛/疲労</span></label>
   </div>
-  
   <div style="font-size:12px;color:#007bff;text-decoration:underline;margin-bottom:10px;display:inline-block;cursor:pointer;" onclick="$('saltyHint').classList.toggle('hidden')">💡塩分多めの基準を確認</div>
   <div id="saltyHint" class="hidden" style="font-size:12px;background:#fff3cd;color:#856404;padding:10px;border-radius:6px;margin-bottom:10px;border:1px solid #ffeeba;line-height:1.5;">
     🍜 ラーメン・うどん等の汁 (半分以上)<br>🍛 カレー・丼もの・焼肉 (タレ多め)<br>🥓 ポテチ・ウインナー等 (食後に喉が渇く)
@@ -84,6 +91,7 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
 </div>
 <div class="card">
   <h2>データ分析</h2><canvas id="weightChart"></canvas>
+  <button class="btn-zoom" onclick="$('chartModal').classList.remove('hidden')">🔍 グラフを全画面で拡大表示</button>
   <div class="btn-group" style="margin-top:15px;"><button id="btn1w" onclick="drawChart(7)">1週間</button><button id="btn1m" onclick="drawChart(30)">1ヶ月</button><button id="btn6m" onclick="drawChart(180)">半年</button></div>
   <div class="row" style="margin-top:15px;">
     <button class="btn-export" onclick="copyForAI()">🤖 データコピー</button>
@@ -94,7 +102,17 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
   <h2>過去の記録</h2>
   <div id="summaryContainer"></div><div id="historyContainer"></div>
 </div>
+
+<div id="chartModal" class="hidden">
+  <div class="modal-content">
+    <span class="close-btn" onclick="$('chartModal').classList.add('hidden')">×</span>
+    <h3 style="margin-top:0;font-size:16px;">拡大グラフ</h3>
+    <canvas id="modalCanvas"></canvas>
+  </div>
+</div>
+
 <script>
+  const GOAL_KM = 100; // ★月間目標距離(km)
   const $ = id => document.getElementById(id);
   const lm = {'bento':'弁当','onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
   const getL = (t,c,m) => !t?'':t==='other'?`その他(${m||''})`:t==='bento'?'弁当':`${lm[t]||''}${c||0}個`;
@@ -119,7 +137,8 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
     $('snackContainer').appendChild(div);
   }
 
-  let chartInstance = null;
+  let chartInstance = null; let modalChartInstance = null;
+  
   function loadDataForDate() {
     const d = $('dateInput').value; if(!d) return;
     const raw = JSON.parse(localStorage.getItem('myHealthData') || '{}');
@@ -173,75 +192,100 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
   function updateHistoryList() {
     const raw = JSON.parse(localStorage.getItem('myHealthData') || '{}');
     const dates = Object.keys(raw).sort((a,b)=>b.localeCompare(a));
-    if(!dates.length) { $('summaryContainer').innerHTML='データなし'; $('historyContainer').innerHTML='<p>記録がありません</p>'; return; }
+    if(!dates.length) { $('summaryContainer').innerHTML='データなし'; $('historyContainer').innerHTML='<p>記録がありません</p>'; $('streakBadge').innerHTML='記録なし'; return; }
     
-    let runTotal=0, wSum=0, wCount=0;
-    let mRun=0, mWSum=0, mWCount=0;
+    // 正直記録ストリーク計算（体重入力があればOK）
+    let streak = 0;
+    const today = new Date();
+    for(let i=0; i<365; i++) {
+      const d = new Date(today); d.setDate(d.getDate()-i);
+      const ds = d.toLocaleDateString('sv-SE');
+      if(raw[ds] && raw[ds].weight) streak++;
+      else if(i > 0) break; 
+    }
+    $('streakBadge').innerHTML = streak > 0 ? `📅 記録継続：${streak}日目` : `記録なし`;
+
+    let mRun=0, mBurn=0, mEat=0;
     const todayStr = new Date().toLocaleDateString('sv-SE'); const todayDate = new Date(todayStr);
     const currMonth = todayDate.getMonth();
     
     dates.forEach(d => {
-      const diff = Math.ceil(Math.abs(todayDate - new Date(d))/(1000*60*60*24));
       const rd = raw[d];
-      if(rd.weight) {
-        if(diff<=7) { if(rd.run) runTotal+=rd.runKm||0; wSum+=rd.weight; wCount++; }
-        if(new Date(d).getMonth() === currMonth) { if(rd.run) mRun+=rd.runKm||0; mWSum+=rd.weight; mWCount++; }
+      if(rd.weight && new Date(d).getMonth() === currMonth) { 
+        if(rd.run) mRun += rd.runKm||0;
+        let burn = 0;
+        if(rd.run) burn += Math.round(rd.weight * rd.runKm);
+        if(rd.muscleUpper||rd.muscle) burn += 100; if(rd.muscleLower) burn += 100; if(rd.stretch) burn += 30;
+        mBurn += burn;
+        if(rd.snacks) rd.snacks.forEach(s => mEat += (parseInt(s.cal)||0));
       }
     });
     
-    $('summaryContainer').innerHTML = `<span style="font-size:12px;color:#666;">📊 直近7日間</span><br><span style="color:#007bff">走行: ${runTotal.toFixed(1)}km / 平均体重: ${wCount? (wSum/wCount).toFixed(1):'--'}kg</span><br>
-    <div style="border-top:1px dashed #ccc;margin:8px 0;"></div><span style="font-size:12px;color:#666;">📅 ${currMonth+1}月の累計</span><br><span style="color:#28a745">走行: ${mRun.toFixed(1)}km / 平均体重: ${mWCount? (mWSum/mWCount).toFixed(1):'--'}kg</span>`;
+    const progPct = Math.min(100, (mRun / GOAL_KM) * 100);
+    const mBal = mBurn - mEat;
+    const mFat = Math.round(mBal / 7.2);
+    const fatHtml = mBal >= 0 ? `<span style="color:#28a745">🔥 ${mFat}gの脂肪燃焼相当</span>` : `<span style="color:#dc3545">⚠️ ${Math.abs(mFat)}gの脂肪蓄積相当</span>`;
+    
+    $('summaryContainer').innerHTML = `<div style="text-align:left;">
+      <div style="font-size:13px;color:#666;font-weight:bold;margin-bottom:4px;">🏃 月間走行距離: ${mRun.toFixed(1)} / ${GOAL_KM}km</div>
+      <div class="prog-bg"><div class="prog-bar" style="width:${progPct}%"></div></div>
+      <div style="font-size:13px;color:#666;font-weight:bold;margin-top:10px;">🥩 今月のカロリー貯金: ${mBal>0?'+':''}${mBal}kcal</div>
+      <div style="font-size:15px;margin-top:2px;">${fatHtml}</div></div>`;
     
     let html='';
     const tm = {'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
     dates.forEach(d => {
       const r = raw[d]; if(!r.weight) return;
+      let burn = 0;
+      if(r.run && r.runKm) burn += Math.round(r.weight * r.runKm);
+      if(r.muscleUpper || r.muscle) burn += 100; if(r.muscleLower) burn += 100; if(r.stretch) burn += 30;
+      let eat = 0; if(r.snacks) r.snacks.forEach(s => eat += (parseInt(s.cal)||0));
+      
+      const bal = burn - eat;
+      const balHtml = bal >= 0 ? `<div class="bal-box bal-plus">🔥消費${burn} - 🍩間食${eat} = ＋${bal}kcal</div>` : `<div class="bal-box bal-minus">🔥消費${burn} - 🍩間食${eat} = ${bal}kcal</div>`;
+
       const ex=[]; if(r.run) ex.push(`ラン${r.runKm}km`); if(r.muscleUpper||r.muscle) ex.push('筋(上)'); if(r.muscleLower) ex.push('筋(下)'); if(r.stretch) ex.push('ｽﾄﾚｯﾁ');
-      
-      let lTxt = getL(r.lunchType, r.lunchCount, r.lunchMemo);
-      if(r.lunchType2) lTxt += ' ＋ ' + getL(r.lunchType2, r.lunchCount2, r.lunchMemo2);
-      
+      let lTxt = getL(r.lunchType, r.lunchCount, r.lunchMemo); if(r.lunchType2) lTxt += ' ＋ ' + getL(r.lunchType2, r.lunchCount2, r.lunchMemo2);
       const sTxt = (r.snacks&&r.snacks.length) ? r.snacks.map(s=>`${tm[s.time]||''} ${s.content}(${s.cal?s.cal+'kcal':''})`).join(', ') : 'なし';
       const tgs=[]; if(r.holiday) tgs.push("休日"); if(r.lunchOut) tgs.push("昼外食"); if(r.dinnerOut) tgs.push("夜外食"); if(r.alcohol) tgs.push("飲酒"); if(r.salty) tgs.push("塩分多め");
       if(r.noBM) tgs.push("便通なし"); if(r.workStress) tgs.push("残業/ｽﾄﾚｽ"); if(r.musclePain) tgs.push("筋肉痛/疲労");
-      html += `<div style="border-bottom:1px solid #eee;padding:12px 0;"><div style="font-weight:bold;color:#007bff;margin-bottom:4px;">${d} : ${r.weight}kg</div>
-        <div style="color:#555;line-height:1.6;">🏃 ${ex.length?ex.join(', '):'なし'} | 🍙 ${lTxt}<br>🍩 間食: ${sTxt}<br>⚠️ 要因: ${tgs.length?tgs.join('・'):'なし'}${r.memo?`<br>📝 ${r.memo}`:''}</div></div>`;
+      html += `<div style="border-bottom:1px solid #eee;padding:12px 0;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;"><span style="font-weight:bold;color:#007bff;font-size:15px;">${d} : ${r.weight}kg</span></div>
+        ${balHtml}
+        <div style="color:#555;line-height:1.6;margin-top:6px;">🏃 ${ex.length?ex.join(', '):'なし'} | 🍙 ${lTxt}<br>🍩 間食: ${sTxt}<br>⚠️ 要因: ${tgs.length?tgs.join('・'):'なし'}${r.memo?`<br>📝 ${r.memo}`:''}</div></div>`;
     }); $('historyContainer').innerHTML = html;
   }
 
   function getCSVData() {
     const raw = JSON.parse(localStorage.getItem('myHealthData') || '{}');
     const dates = Object.keys(raw).sort(); if(!dates.length) return null;
-    let csv="日付(曜日),平日/休日,体重,運動,昼食,間食,外食飲酒等,体調・疲労,メモ\n";
+    let csv="日付(曜日),平日/休日,体重,運動,運動消費(kcal),昼食,間食,間食摂取(kcal),収支(kcal),外食飲酒等,体調・疲労,メモ\n";
     const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
     const dw=['日','月','火','水','木','金','土'];
     dates.forEach(d => {
-      const r=raw[d], ex=[];
-      if(r.run) ex.push(`ラン${r.runKm}km`); if(r.muscleUpper||r.muscle) ex.push('筋(上)'); if(r.muscleLower) ex.push('筋(下)'); if(r.stretch) ex.push('ｽﾄﾚｯﾁ');
-      const sTxt = (r.snacks&&r.snacks.length) ? r.snacks.map(s=>`${tm[s.time]||s.time}:${s.content}(${s.cal}kcal)`).join(' / ') : 'なし';
+      const r=raw[d], ex=[]; let burn = 0;
+      if(r.run) { ex.push(`ラン${r.runKm}km`); burn += Math.round(r.weight * r.runKm); }
+      if(r.muscleUpper||r.muscle) { ex.push('筋(上)'); burn += 100; }
+      if(r.muscleLower) { ex.push('筋(下)'); burn += 100; }
+      if(r.stretch) { ex.push('ｽﾄﾚｯﾁ'); burn += 30; }
       
-      let lTxt = getL(r.lunchType, r.lunchCount, r.lunchMemo);
-      if(r.lunchType2) lTxt += ' ＋ ' + getL(r.lunchType2, r.lunchCount2, r.lunchMemo2);
+      let eat = 0; const sTxt = (r.snacks&&r.snacks.length) ? r.snacks.map(s=>{eat+=(parseInt(s.cal)||0); return `${tm[s.time]||s.time}:${s.content}(${s.cal}kcal)`;}).join(' / ') : 'なし';
+      let lTxt = getL(r.lunchType, r.lunchCount, r.lunchMemo); if(r.lunchType2) lTxt += ' ＋ ' + getL(r.lunchType2, r.lunchCount2, r.lunchMemo2);
       
       const tgs=[]; if(r.lunchOut) tgs.push("昼外"); if(r.dinnerOut) tgs.push("夜外"); if(r.alcohol) tgs.push("飲酒"); if(r.salty) tgs.push("塩分多め");
       const cond=[]; if(r.noBM) cond.push("便通なし"); if(r.workStress) cond.push("残業/ｽﾄﾚｽ"); if(r.musclePain) cond.push("筋肉痛/疲労");
-      csv+=`${d}(${dw[new Date(d).getDay()]}),${r.holiday?'休日':'平日'},${r.weight},${ex.length?ex.join('+'):'休'},${lTxt},${sTxt},${tgs.length?tgs.join('・'):'無'},${cond.length?cond.join('・'):'通常'},${r.memo||''}\n`;
+      csv+=`${d}(${dw[new Date(d).getDay()]}),${r.holiday?'休日':'平日'},${r.weight},${ex.length?ex.join('+'):'休'},${burn},${lTxt},${sTxt},${eat},${burn-eat},${tgs.length?tgs.join('・'):'無'},${cond.length?cond.join('・'):'通常'},${r.memo||''}\n`;
     });
     return csv;
   }
 
   function copyForAI() {
     const csv = getCSVData(); if(!csv) return alert('データがありません');
-    navigator.clipboard.writeText(csv).then(()=>alert("コピーしました！チャットに貼り付けてください。")).catch(()=>alert("コピー失敗"));
+    navigator.clipboard.writeText(csv).then(()=>alert("コピーしました！")).catch(()=>alert("コピー失敗"));
   }
-
   function downloadCSV() {
     const csv = getCSVData(); if(!csv) return alert('データがありません');
     const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], {type: 'text/csv;charset=utf-8;'});
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = "health_data.csv";
-    link.click();
+    const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "health_data.csv"; link.click();
   }
 
   function drawChart(days) {
@@ -251,35 +295,36 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
     const labels=[], w=[], cols=[], mAvgs=[], today=new Date();
     for(let i=days-1; i>=0; i--) {
       const d=new Date(today); d.setDate(d.getDate()-i); const ds=d.toLocaleDateString('sv-SE');
-      labels.push(ds.slice(5).replace('-','/'));
-      const rd=raw[ds];
+      labels.push(ds.slice(5).replace('-','/')); const rd=raw[ds];
       if(rd&&rd.weight) {
-        w.push(rd.weight);
-        cols.push(rd.lunchOut||rd.dinnerOut||rd.alcohol||rd.salty||rd.noBM||rd.workStress||rd.musclePain ? 'rgba(220,53,69,1)' : (rd.run||rd.muscleUpper||rd.muscleLower||rd.muscle ? 'rgba(40,167,69,1)' : 'rgba(0,123,255,1)'));
+        w.push(rd.weight); cols.push(rd.lunchOut||rd.dinnerOut||rd.alcohol||rd.salty||rd.noBM||rd.workStress||rd.musclePain ? 'rgba(220,53,69,1)' : (rd.run||rd.muscleUpper||rd.muscleLower||rd.muscle ? 'rgba(40,167,69,1)' : 'rgba(0,123,255,1)'));
       } else { w.push(null); cols.push('rgba(0,123,255,1)'); }
       let s=0, c=0;
       for(let j=0; j<7; j++) { const pd=new Date(today); pd.setDate(pd.getDate()-(i+j)); const pds=pd.toLocaleDateString('sv-SE'); if(raw[pds]&&raw[pds].weight){ s+=raw[pds].weight; c++; } }
       mAvgs.push(c>0 ? (s/c).toFixed(2) : null);
     }
-    const ctx=$('weightChart').getContext('2d'); if(chartInstance) chartInstance.destroy();
-    chartInstance = new Chart(ctx, { type: 'line', data: { labels, datasets: [
+    
+    const chartConfig = { type: 'line', data: { labels, datasets: [
       {label:'7日平均', data:mAvgs, borderColor:'rgba(255,152,0,0.8)', backgroundColor:'transparent', borderWidth:3, pointRadius:0, spanGaps:true, tension:0.3, order:1},
       {label:'体重(kg)', data:w, borderColor:'rgba(0,123,255,0.2)', backgroundColor:'transparent', pointBackgroundColor:cols, pointBorderColor:cols, borderWidth:2, pointRadius:5, spanGaps:true, tension:0.1, order:2}
     ]}, options: { responsive:true, scales: { x: { grid: { display: false } }, y: { grace: '10%' } }, plugins: { legend:{display:true}, tooltip:{callbacks:{afterLabel:ctx=>{
       if(ctx.datasetIndex===0)return; const d=new Date(today); d.setDate(d.getDate()-(days-1)+ctx.dataIndex);
       const rd=raw[d.toLocaleDateString('sv-SE')]; if(!rd)return[];
       const dtls=[]; const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
-      
-      let lTxt = getL(rd.lunchType, rd.lunchCount, rd.lunchMemo);
-      if(rd.lunchType2) lTxt += ' ＋ ' + getL(rd.lunchType2, rd.lunchCount2, rd.lunchMemo2);
+      let lTxt = getL(rd.lunchType, rd.lunchCount, rd.lunchMemo); if(rd.lunchType2) lTxt += ' ＋ ' + getL(rd.lunchType2, rd.lunchCount2, rd.lunchMemo2);
       dtls.push(`昼食: ${lTxt}`);
-      
       const tgs=[]; if(rd.holiday)tgs.push("休日"); if(rd.lunchOut)tgs.push("昼外食"); if(rd.dinnerOut)tgs.push("夜外食"); if(rd.alcohol)tgs.push("飲酒"); if(rd.salty)tgs.push("塩分多め");
       if(rd.noBM)tgs.push("便通なし"); if(rd.workStress)tgs.push("残業/ｽﾄﾚｽ"); if(rd.musclePain)tgs.push("筋肉痛/疲労");
       if(tgs.length) dtls.push(`要因: ${tgs.join(', ')}`);
       if(rd.snacks) rd.snacks.forEach((s,i)=>dtls.push(`間食${i+1}: ${tm[s.time]||''} ${s.content} (${s.cal}kcal)`));
       if(rd.memo) dtls.push(`メモ: ${rd.memo}`); return dtls;
-    }}}}}});
+    }}}}}};
+
+    const ctx=$('weightChart').getContext('2d'); if(chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(ctx, chartConfig);
+    
+    const mCtx=$('modalCanvas').getContext('2d'); if(modalChartInstance) modalChartInstance.destroy();
+    modalChartInstance = new Chart(mCtx, chartConfig);
   } drawChart(30);
 </script>
 </body>
