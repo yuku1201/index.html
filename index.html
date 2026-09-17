@@ -24,9 +24,9 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
 .checkbox-group label:has(input:checked) .tag-info{color:#0056b3}
 .checkbox-group label:has(input:checked#tagHoliday){background:#cce5ff;border-color:#b8daff}
 .checkbox-group input{display:none}.hidden{display:none !important}
-.snack-item{background:#f8f9fa;padding:15px 12px 12px;border-radius:8px;margin-bottom:10px;border:1px solid #eee;position:relative}
-.btn-remove-snack{position:absolute;top:-5px;right:-5px;background:#dc3545;color:white;border:none;border-radius:50%;width:24px;height:24px;font-size:12px;font-weight:bold;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
-.btn-add-snack{background:#fff;color:#007bff;border:2px dashed #007bff;padding:10px;border-radius:8px;cursor:pointer;width:100%;font-weight:bold;margin-bottom:10px}
+.snack-item{background:#f8f9fa;padding:15px;border-radius:8px;margin-bottom:10px;border:1px solid #eee;}
+.btn-remove-snack{background:#ffe5e5;color:#dc3545;border:none;border-radius:8px;font-weight:bold;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;font-size:16px;}
+.btn-add-snack{background:transparent;color:#007bff;border:2px dashed #007bff;padding:12px;border-radius:8px;cursor:pointer;width:100%;font-weight:bold;margin-bottom:10px;font-size:14px;}
 .btn-save{background:#007bff;color:#fff;border:none;padding:15px;width:100%;border-radius:8px;font-size:18px;font-weight:bold;margin-top:10px;cursor:pointer;box-shadow:0 4px 6px rgba(0,123,255,0.2)}
 .btn-export{background:#343a40;color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer;box-shadow:0 2px 4px rgba(0,0,0,0.1)}
 .btn-zoom{background:#e9ecef;color:#333;border:1px solid #ccc;padding:8px;border-radius:8px;font-size:14px;cursor:pointer;width:100%;margin-top:10px;}
@@ -38,14 +38,14 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
 .bal-minus{background:#f8d7da;color:#721c24;border:1px solid #f5c6cb;}
 .prog-bg{background:#dee2e6;border-radius:10px;height:12px;width:100%;margin:6px 0;overflow:hidden;}
 .prog-bar{background:#28a745;height:100%;transition:width 0.3s;}
-#streakBadge{font-size:13px;background:#17a2b8;color:#fff;padding:4px 10px;border-radius:20px;font-weight:bold;box-shadow:0 2px 4px rgba(23,162,184,0.3)}
+#streakBadge{font-size:13px;background:#17a2b8;color:#fff;padding:4px 10px;border-radius:20px;font-weight:bold;box-shadow:0 2px 4px rgba(23,162,184,0.3);cursor:pointer;}
 #chartModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:15px;box-sizing:border-box}
 .modal-content{background:#fff;width:100%;border-radius:12px;padding:20px;box-sizing:border-box;position:relative}
 .close-btn{position:absolute;top:5px;right:15px;font-size:28px;cursor:pointer;font-weight:bold;color:#666}
 </style></head>
 <body>
 <div class="card">
-  <h2>記録・修正 <span id="streakBadge">記録なし</span></h2>
+  <h2>記録・修正 <span id="streakBadge" onclick="alert('【連続記録ストリーク】\nカロリーの赤字・黒字に関わらず、ごまかさずに体重と食事を記録し続けた連続日数です。\n現実と向き合う強さの証拠です。')">記録なし</span></h2>
   <label>日付</label><input type="date" id="dateInput">
   <label>体重 (kg)</label><input type="number" step="0.1" id="weightInput" placeholder="例: 65.5">
   <label>運動 (複数選択可)</label>
@@ -58,15 +58,16 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
   </div>
   <div id="runDistWrapper" class="hidden"><label>距離(km)</label><input type="number" step="0.1" id="runDistInput" placeholder="例: 10"></div>
   <label>昼食</label>
-  <div class="row">
+  <div class="row" style="margin-bottom:5px;">
     <select id="lunchSelect"><option value="bento">弁当(持参)</option><option value="onigiri_low">おにぎり(低脂質)</option><option value="onigiri_high">おにぎり(高脂質)</option><option value="bread">パン</option><option value="other">その他</option></select>
     <input type="number" id="lunchCount" min="0" placeholder="個数(例:2)"><input type="text" id="lunchMemo" class="hidden" placeholder="内容(例:パスタ)">
   </div>
-  <div class="row hidden" id="lunchRow2">
+  <div class="row hidden" id="lunchRow2" style="margin-bottom:5px;">
     <select id="lunchSelect2"><option value="">-- 追加なし --</option><option value="bento">弁当(持参)</option><option value="onigiri_low">おにぎり(低脂質)</option><option value="onigiri_high">おにぎり(高脂質)</option><option value="bread">パン</option><option value="other">その他</option></select>
     <input type="number" id="lunchCount2" min="0" placeholder="個数"><input type="text" id="lunchMemo2" class="hidden" placeholder="内容">
   </div>
-  <div style="text-align:right;margin-top:-5px;margin-bottom:10px;"><span id="btnAddLunch" style="font-size:13px;color:#007bff;cursor:pointer;font-weight:bold;">＋ 組み合わせを追加</span></div>
+  <button type="button" id="btnAddLunch" class="btn-add-snack" style="border-width:1px;padding:8px;margin-bottom:15px;color:#495057;border-color:#ced4da;">＋ 昼食の組み合わせを追加</button>
+  
   <label>間食</label>
   <div id="snackContainer"></div>
   <button type="button" class="btn-add-snack" onclick="addSnackRow()">＋ 間食を追加</button>
@@ -112,7 +113,7 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
 </div>
 
 <script>
-  const GOAL_KM = 100; // ★月間目標距離(km)
+  const GOAL_KM = 100; // 月間目標距離(km)
   const $ = id => document.getElementById(id);
   const lm = {'bento':'弁当','onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
   const getL = (t,c,m) => !t?'':t==='other'?`その他(${m||''})`:t==='bento'?'弁当':`${lm[t]||''}${c||0}個`;
@@ -127,13 +128,18 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
 
   function addSnackRow(time='', cal='', content='') {
     const div = document.createElement('div'); div.className = 'snack-item';
-    div.innerHTML = `<button type="button" class="btn-remove-snack" onclick="this.parentElement.remove()">✖</button>
-      <div class="row"><select class="snack-time">
-      <option value="">タイミング</option><option value="morning" ${time==='morning'?'selected':''}>朝</option><option value="noon" ${time==='noon'?'selected':''}>昼</option>
-      <option value="evening" ${time==='evening'?'selected':''}>夕方</option><option value="before_dinner" ${time==='before_dinner'?'selected':''}>夕食前</option>
-      <option value="after_dinner" ${time==='after_dinner'?'selected':''}>夕食後</option><option value="night" ${time==='night'?'selected':''} style="display:none;">夜(旧)</option>
-      </select><input type="number" class="snack-cal" min="0" placeholder="kcal" value="${cal}"></div>
-      <input type="text" class="snack-content" placeholder="内容 (例: チョコ)" value="${content}">`;
+    div.innerHTML = `
+      <div class="row" style="margin-bottom:8px;">
+        <select class="snack-time" style="flex:2;">
+          <option value="">タイミング</option><option value="morning" ${time==='morning'?'selected':''}>朝</option><option value="noon" ${time==='noon'?'selected':''}>昼</option>
+          <option value="evening" ${time==='evening'?'selected':''}>夕方</option><option value="before_dinner" ${time==='before_dinner'?'selected':''}>夕食前</option>
+          <option value="after_dinner" ${time==='after_dinner'?'selected':''}>夕食後</option><option value="night" ${time==='night'?'selected':''} style="display:none;">夜(旧)</option>
+        </select>
+        <input type="number" class="snack-cal" style="flex:2;" min="0" placeholder="kcal" value="${cal}">
+        <button type="button" class="btn-remove-snack" style="flex:0.6;" onclick="this.parentElement.parentElement.remove()">✖</button>
+      </div>
+      <input type="text" class="snack-content" placeholder="内容 (例: チョコ)" value="${content}">
+    `;
     $('snackContainer').appendChild(div);
   }
 
@@ -154,7 +160,7 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
     $('lunchSelect').dispatchEvent(new Event('change'));
     
     if(rd.lunchType2) { $('lunchRow2').classList.remove('hidden'); $('btnAddLunch').style.display='none'; $('lunchSelect2').value=rd.lunchType2; $('lunchCount2').value=rd.lunchCount2||''; $('lunchMemo2').value=rd.lunchMemo2||''; }
-    else { $('lunchRow2').classList.add('hidden'); $('btnAddLunch').style.display='inline-block'; $('lunchSelect2').value=''; $('lunchCount2').value=''; $('lunchMemo2').value=''; }
+    else { $('lunchRow2').classList.add('hidden'); $('btnAddLunch').style.display='block'; $('lunchSelect2').value=''; $('lunchCount2').value=''; $('lunchMemo2').value=''; }
     $('lunchSelect2').dispatchEvent(new Event('change'));
 
     $('snackContainer').innerHTML = '';
@@ -194,7 +200,7 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
     const dates = Object.keys(raw).sort((a,b)=>b.localeCompare(a));
     if(!dates.length) { $('summaryContainer').innerHTML='データなし'; $('historyContainer').innerHTML='<p>記録がありません</p>'; $('streakBadge').innerHTML='記録なし'; return; }
     
-    // 正直記録ストリーク計算（体重入力があればOK）
+    // 継続ストリーク計算
     let streak = 0;
     const today = new Date();
     for(let i=0; i<365; i++) {
@@ -203,7 +209,7 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
       if(raw[ds] && raw[ds].weight) streak++;
       else if(i > 0) break; 
     }
-    $('streakBadge').innerHTML = streak > 0 ? `📅 記録継続：${streak}日目` : `記録なし`;
+    $('streakBadge').innerHTML = streak > 0 ? `📅 連続記録：${streak}日目` : `記録なし`;
 
     let mRun=0, mBurn=0, mEat=0;
     const todayStr = new Date().toLocaleDateString('sv-SE'); const todayDate = new Date(todayStr);
