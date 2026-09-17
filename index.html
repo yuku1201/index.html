@@ -17,7 +17,7 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
 .checkbox-group label:has(input:checked) .tag-rest{color:#3c4043}
 .checkbox-group label:has(input:checked#exNone){background:#f1f3f4;border-color:#80868a}
 .checkbox-group label:has(input:checked) .tag-warn{color:#c5221f}
-.checkbox-group label:has(input:checked:is(#tagLunchOut,#tagDinnerOut,#tagAlcohol,#tagSalty)){background:#fce8e6;border-color:#ea4335}
+.checkbox-group label:has(input:checked:is(#tagLunchOut,#tagDinnerOut,#tagAlcohol,#tagSalty,#tagNoBM,#tagWorkStress,#tagMusclePain)){background:#fce8e6;border-color:#ea4335}
 .checkbox-group label:has(input:checked) .tag-info{color:#0056b3}
 .checkbox-group label:has(input:checked#tagHoliday){background:#cce5ff;border-color:#b8daff}
 .checkbox-group input{display:none}.hidden{display:none !important}
@@ -28,7 +28,7 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
 .btn-export{background:#343a40;color:#fff;border:none;padding:12px;border-radius:8px;font-size:14px;font-weight:bold;cursor:pointer}
 .btn-group{display:flex;gap:5px;margin-bottom:15px}.btn-group button{flex:1;background:#e9ecef;border:none;padding:10px;border-radius:6px;font-size:14px;color:#495057}.btn-group button.active{background:#007bff;color:#fff}
 #historyContainer{max-height:350px;overflow-y:auto;font-size:14px;padding-right:5px}
-#summaryContainer{background:#eef2f5;padding:12px;border-radius:8px;margin-bottom:15px;text-align:center;color:#333;font-weight:bold;border:1px solid #dce3e9}
+#summaryContainer{background:#eef2f5;padding:12px;border-radius:8px;margin-bottom:15px;text-align:center;color:#333;font-weight:bold;border:1px solid #dce3e9;line-height:1.6}
 </style></head>
 <body>
 <div class="card">
@@ -57,17 +57,16 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
   <label>間食</label>
   <div id="snackContainer"></div>
   <button type="button" class="btn-add-snack" onclick="addSnackRow()">＋ 間食を追加</button>
-  <label>変動要因</label>
+  <label>変動要因 (ノイズの記録)</label>
   <div class="checkbox-group" style="margin-bottom:5px;">
     <label><input type="checkbox" id="tagHoliday"><span class="tag-info">休日(祝休・有休)</span></label>
     <label><input type="checkbox" id="tagLunchOut"><span class="tag-warn">昼外食</span></label>
     <label><input type="checkbox" id="tagDinnerOut"><span class="tag-warn">夜外食</span></label>
     <label><input type="checkbox" id="tagAlcohol"><span class="tag-warn">飲酒</span></label>
     <label><input type="checkbox" id="tagSalty"><span class="tag-warn">塩分多め</span></label>
-  </div>
-  <div style="font-size:12px;color:#007bff;text-decoration:underline;margin-bottom:10px;display:inline-block;cursor:pointer;" onclick="$('saltyHint').classList.toggle('hidden')">💡塩分多めの基準を確認</div>
-  <div id="saltyHint" class="hidden" style="font-size:12px;background:#fff3cd;color:#856404;padding:10px;border-radius:6px;margin-bottom:10px;border:1px solid #ffeeba;line-height:1.5;">
-    🍜 ラーメン・うどん等の汁 (半分以上)<br>🍛 カレー・丼もの・焼肉 (タレ多め)<br>🥓 ポテチ・ウインナー等 (食後に喉が渇く)
+    <label><input type="checkbox" id="tagNoBM"><span class="tag-warn">便通なし</span></label>
+    <label><input type="checkbox" id="tagWorkStress"><span class="tag-warn">残業/ｽﾄﾚｽ</span></label>
+    <label><input type="checkbox" id="tagMusclePain"><span class="tag-warn">筋肉痛/疲労</span></label>
   </div>
   <label>メモ(任意)</label><input type="text" id="memoInput" placeholder="例: 食べすぎた等">
   <button class="btn-save" onclick="saveData()">保存する</button>
@@ -132,7 +131,9 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
     if(rd.snacks) rd.snacks.forEach(s => addSnackRow(s.time, s.cal, s.content));
     $('tagHoliday').checked = rd.holiday || false;
     $('tagLunchOut').checked = rd.lunchOut || false; $('tagDinnerOut').checked = rd.dinnerOut || false;
-    $('tagAlcohol').checked = rd.alcohol || false; $('tagSalty').checked = rd.salty || false; $('memoInput').value = rd.memo || '';
+    $('tagAlcohol').checked = rd.alcohol || false; $('tagSalty').checked = rd.salty || false;
+    $('tagNoBM').checked = rd.noBM || false; $('tagWorkStress').checked = rd.workStress || false; $('tagMusclePain').checked = rd.musclePain || false;
+    $('memoInput').value = rd.memo || '';
     $('exRun').dispatchEvent(new Event('change'));
   }
   $('dateInput').addEventListener('change', loadDataForDate);
@@ -152,7 +153,8 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
       muscleUpper:$('exMuscleUpper').checked, muscleLower:$('exMuscleLower').checked, stretch:$('exStretch').checked,
       lunchType:$('lunchSelect').value, lunchCount:parseInt($('lunchCount').value||0), lunchMemo:$('lunchMemo').value,
       lunchType2:$('lunchRow2').classList.contains('hidden')?'':$('lunchSelect2').value, lunchCount2:parseInt($('lunchCount2').value||0), lunchMemo2:$('lunchMemo2').value,
-      snacks, holiday:$('tagHoliday').checked, lunchOut:$('tagLunchOut').checked, dinnerOut:$('tagDinnerOut').checked, alcohol:$('tagAlcohol').checked, salty:$('tagSalty').checked, memo:$('memoInput').value };
+      snacks, holiday:$('tagHoliday').checked, lunchOut:$('tagLunchOut').checked, dinnerOut:$('tagDinnerOut').checked, alcohol:$('tagAlcohol').checked, salty:$('tagSalty').checked,
+      noBM:$('tagNoBM').checked, workStress:$('tagWorkStress').checked, musclePain:$('tagMusclePain').checked, memo:$('memoInput').value };
     localStorage.setItem('myHealthData', JSON.stringify(data));
     alert('保存しました！'); drawChart(30); updateHistoryList();
   }
@@ -161,13 +163,23 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
     const raw = JSON.parse(localStorage.getItem('myHealthData') || '{}');
     const dates = Object.keys(raw).sort((a,b)=>b.localeCompare(a));
     if(!dates.length) { $('summaryContainer').innerHTML='データなし'; $('historyContainer').innerHTML='<p>記録がありません</p>'; return; }
+    
     let runTotal=0, wSum=0, wCount=0;
+    let mRun=0, mWSum=0, mWCount=0;
     const todayStr = new Date().toLocaleDateString('sv-SE'); const todayDate = new Date(todayStr);
+    const currMonth = todayDate.getMonth();
+    
     dates.forEach(d => {
       const diff = Math.ceil(Math.abs(todayDate - new Date(d))/(1000*60*60*24));
-      if(diff<=7 && raw[d].weight) { if(raw[d].run) runTotal+=raw[d].runKm||0; wSum+=raw[d].weight; wCount++; }
+      const rd = raw[d];
+      if(rd.weight) {
+        if(diff<=7) { if(rd.run) runTotal+=rd.runKm||0; wSum+=rd.weight; wCount++; }
+        if(new Date(d).getMonth() === currMonth) { if(rd.run) mRun+=rd.runKm||0; mWSum+=rd.weight; mWCount++; }
+      }
     });
-    $('summaryContainer').innerHTML = `📊 7日間サマリー<br><span style="color:#007bff">走行: ${runTotal.toFixed(1)}km / 平均体重: ${wCount? (wSum/wCount).toFixed(1):'--'}kg</span>`;
+    
+    $('summaryContainer').innerHTML = `<span style="font-size:12px;color:#666;">📊 直近7日間</span><br><span style="color:#007bff">走行: ${runTotal.toFixed(1)}km / 平均体重: ${wCount? (wSum/wCount).toFixed(1):'--'}kg</span><br>
+    <div style="border-top:1px dashed #ccc;margin:8px 0;"></div><span style="font-size:12px;color:#666;">📅 ${currMonth+1}月の累計</span><br><span style="color:#28a745">走行: ${mRun.toFixed(1)}km / 平均体重: ${mWCount? (mWSum/mWCount).toFixed(1):'--'}kg</span>`;
     
     let html='';
     const tm = {'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
@@ -180,6 +192,7 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
       
       const sTxt = (r.snacks&&r.snacks.length) ? r.snacks.map(s=>`${tm[s.time]||''} ${s.content}(${s.cal?s.cal+'kcal':''})`).join(', ') : 'なし';
       const tgs=[]; if(r.holiday) tgs.push("休日"); if(r.lunchOut) tgs.push("昼外食"); if(r.dinnerOut) tgs.push("夜外食"); if(r.alcohol) tgs.push("飲酒"); if(r.salty) tgs.push("塩分多め");
+      if(r.noBM) tgs.push("便通なし"); if(r.workStress) tgs.push("残業/ｽﾄﾚｽ"); if(r.musclePain) tgs.push("筋肉痛/疲労");
       html += `<div style="border-bottom:1px solid #eee;padding:12px 0;"><div style="font-weight:bold;color:#007bff;margin-bottom:4px;">${d} : ${r.weight}kg</div>
         <div style="color:#555;line-height:1.6;">🏃 ${ex.length?ex.join(', '):'なし'} | 🍙 ${lTxt}<br>🍩 間食: ${sTxt}<br>⚠️ 要因: ${tgs.length?tgs.join('・'):'なし'}${r.memo?`<br>📝 ${r.memo}`:''}</div></div>`;
     }); $('historyContainer').innerHTML = html;
@@ -188,7 +201,7 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
   function getCSVData() {
     const raw = JSON.parse(localStorage.getItem('myHealthData') || '{}');
     const dates = Object.keys(raw).sort(); if(!dates.length) return null;
-    let csv="日付(曜日),平日/休日,体重,運動,昼食,間食,外食飲酒等,メモ\n";
+    let csv="日付(曜日),平日/休日,体重,運動,昼食,間食,外食飲酒等,体調・疲労,メモ\n";
     const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
     const dw=['日','月','火','水','木','金','土'];
     dates.forEach(d => {
@@ -200,7 +213,8 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
       if(r.lunchType2) lTxt += ' ＋ ' + getL(r.lunchType2, r.lunchCount2, r.lunchMemo2);
       
       const tgs=[]; if(r.lunchOut) tgs.push("昼外"); if(r.dinnerOut) tgs.push("夜外"); if(r.alcohol) tgs.push("飲酒"); if(r.salty) tgs.push("塩分多め");
-      csv+=`${d}(${dw[new Date(d).getDay()]}),${r.holiday?'休日':'平日'},${r.weight},${ex.length?ex.join('+'):'休'},${lTxt},${sTxt},${tgs.length?tgs.join('・'):'無'},${r.memo||''}\n`;
+      const cond=[]; if(r.noBM) cond.push("便通なし"); if(r.workStress) cond.push("残業/ｽﾄﾚｽ"); if(r.musclePain) cond.push("筋肉痛/疲労");
+      csv+=`${d}(${dw[new Date(d).getDay()]}),${r.holiday?'休日':'平日'},${r.weight},${ex.length?ex.join('+'):'休'},${lTxt},${sTxt},${tgs.length?tgs.join('・'):'無'},${cond.length?cond.join('・'):'通常'},${r.memo||''}\n`;
     });
     return csv;
   }
@@ -230,7 +244,7 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
       const rd=raw[ds];
       if(rd&&rd.weight) {
         w.push(rd.weight);
-        cols.push(rd.lunchOut||rd.dinnerOut||rd.alcohol||rd.salty ? 'rgba(220,53,69,1)' : (rd.run||rd.muscleUpper||rd.muscleLower||rd.muscle ? 'rgba(40,167,69,1)' : 'rgba(0,123,255,1)'));
+        cols.push(rd.lunchOut||rd.dinnerOut||rd.alcohol||rd.salty||rd.noBM||rd.workStress||rd.musclePain ? 'rgba(220,53,69,1)' : (rd.run||rd.muscleUpper||rd.muscleLower||rd.muscle ? 'rgba(40,167,69,1)' : 'rgba(0,123,255,1)'));
       } else { w.push(null); cols.push('rgba(0,123,255,1)'); }
       let s=0, c=0;
       for(let j=0; j<7; j++) { const pd=new Date(today); pd.setDate(pd.getDate()-(i+j)); const pds=pd.toLocaleDateString('sv-SE'); if(raw[pds]&&raw[pds].weight){ s+=raw[pds].weight; c++; } }
@@ -250,6 +264,7 @@ input[type="number"],input[type="text"],input[type="date"],select{width:100%;pad
       dtls.push(`昼食: ${lTxt}`);
       
       const tgs=[]; if(rd.holiday)tgs.push("休日"); if(rd.lunchOut)tgs.push("昼外食"); if(rd.dinnerOut)tgs.push("夜外食"); if(rd.alcohol)tgs.push("飲酒"); if(rd.salty)tgs.push("塩分多め");
+      if(rd.noBM)tgs.push("便通なし"); if(rd.workStress)tgs.push("残業/ｽﾄﾚｽ"); if(rd.musclePain)tgs.push("筋肉痛/疲労");
       if(tgs.length) dtls.push(`要因: ${tgs.join(', ')}`);
       if(rd.snacks) rd.snacks.forEach((s,i)=>dtls.push(`間食${i+1}: ${tm[s.time]||''} ${s.content} (${s.cal}kcal)`));
       if(rd.memo) dtls.push(`メモ: ${rd.memo}`); return dtls;
