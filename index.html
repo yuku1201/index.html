@@ -48,9 +48,13 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
 #chartModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:15px;box-sizing:border-box}
 .modal-content{background:#fff;width:100%;border-radius:20px;padding:24px;box-sizing:border-box;position:relative}
 .close-btn{position:absolute;top:10px;right:20px;font-size:28px;cursor:pointer;font-weight:bold;color:#999}
+#rescueBanner{padding:12px;border-radius:12px;margin-bottom:15px;font-weight:bold;text-align:center;}
 </style></head>
 <body>
 <div class="card">
+  <!-- データ生存確認バナー -->
+  <div id="rescueBanner" style="background:#ff9800;color:#fff;">データ状態を確認中...</div>
+
   <h2>記録・修正 <span id="streakBadge" onclick="alert('【連続記録ストリーク】\nカロリーの赤字・黒字に関わらず、ごまかさずに体重と食事を記録し続けた連続日数です。\n原因と向き合う過程を楽しむ証拠です！')">記録なし</span></h2>
   
   <div id="feedbackBanner" class="hidden"></div>
@@ -130,31 +134,55 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
 </div>
 
 <script>
-  // === 【緊急データ復旧プログラム】 ===
-  // 過去のスラッシュ区切り(2026/09/17)をハイフン(2026-09-17)に自動変換して救出します
-  (function autoFixDates() {
-    let raw = JSON.parse(localStorage.getItem('myHealthData') || '{}');
-    let changed = false;
-    Object.keys(raw).forEach(key => {
-      if(key.includes('/')) {
-        let newKey = key.replace(/\//g, '-');
-        raw[newKey] = raw[key];
-        delete raw[key];
-        changed = true;
-      }
-    });
-    if(changed) localStorage.setItem('myHealthData', JSON.stringify(raw));
-  })();
-  // ===================================
-
   const GOAL_KM = 100;
   const $ = id => document.getElementById(id);
   const lm = {'bento':'弁当','onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
   const md = {'good':'😄 最高！','soso':'🙂 まあまあ','bad':'😣 耐えた…'};
   const getL = (t,c,m) => !t?'':t==='other'?`その他(${m||''})`:t==='bento'?'弁当':`${lm[t]||''}${c||0}個`;
   
-  // スマホごとの日付バグを防ぐための専用フォーマット関数
-  const fmtDate = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  const fmtDate = d => {
+    if(!(d instanceof Date) || isNaN(d)) return '';
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  };
+
+  // どんなエラーがあっても絶対にフリーズさせない最強のデータ読取機能
+  function getSafeData() {
+    try {
+      let v = localStorage.getItem('myHealthData');
+      if(!v) return {};
+      let raw = JSON.parse(v);
+      let fixed = {};
+      let changed = false;
+      // 日付の表記揺れ（スラッシュ等）を強制補正して救出
+      Object.keys(raw).forEach(k => {
+        let newK = k.replace(/\//g, '-');
+        let m = newK.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        if(m) newK = m[1] + '-' + m[2].padStart(2,'0') + '-' + m[3].padStart(2,'0');
+        fixed[newK] = raw[k];
+        if(k !== newK) changed = true;
+      });
+      if(changed) localStorage.setItem('myHealthData', JSON.stringify(fixed));
+      return fixed;
+    } catch(e) {
+      console.error(e);
+      return {};
+    }
+  }
+
+  // 起動時のデータ診断
+  window.onload = () => {
+    let v = localStorage.getItem('myHealthData');
+    let rb = $('rescueBanner');
+    if(!v || v === '{}') {
+      rb.innerHTML = "🚨 スマホ内にデータが見つかりません。LINE等から開かず、必ず普段のChromeから開き直してください。";
+      rb.style.background = "#dc3545";
+    } else {
+      let d = getSafeData();
+      let len = Object.keys(d).length;
+      rb.innerHTML = `✅ データはスマホ内に無事です！（計 ${len} 日分）<br>グラフと履歴に完全復旧しました！`;
+      rb.style.background = "#28a745";
+    }
+  };
 
   $('exRun').addEventListener('change', () => $('runDistWrapper').classList.toggle('hidden', !$('exRun').checked));
   document.querySelectorAll('#exRun,#exMuscleUpper,#exMuscleLower,#exStretch').forEach(el => el.addEventListener('change', e => { if(e.target.checked) $('exNone').checked = false; }));$('exNone').addEventListener('change', e => { if(e.target.checked){ $('exRun').checked=$('exMuscleUpper').checked=$('exMuscleLower').checked=$('exStretch').checked=false; $('runDistWrapper').classList.add('hidden'); }});$('lunchSelect').addEventListener('change', e => { const o = e.target.value === 'other'; $('lunchCount').classList.toggle('hidden', o\vert{}\vert{}e.target.value==='bento');$('lunchMemo').classList.toggle('hidden', !o); });
@@ -219,11 +247,15 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
   
   function loadDataForDate() {
     const d = $('dateInput').value; if(!d) return;
-    const raw = JSON.parse(localStorage.getItem('myHealthData') || '{}');
+    const raw = getSafeData();
     const rd = raw[d] || {};
     $('weightInput').value = rd.weight || '';
-    if(rd.mood) document.querySelector(`input[name="mood"][value="${rd.mood}"]`).checked = true;
-    else document.querySelectorAll('input[name="mood"]').forEach(el=>el.checked=false);
+    if(rd.mood) {
+      let mEl = document.querySelector(`input[name="mood"][value="${rd.mood}"]`);
+      if(mEl) mEl.checked = true;
+    } else {
+      document.querySelectorAll('input[name="mood"]').forEach(el=>el.checked=false);
+    }
     $('exRun').checked = rd.run || false; $('runDistInput').value = rd.runKm \vert{}\vert{} '';$('exMuscleUpper').checked = rd.muscleUpper || rd.muscle || false;
     $('exMuscleLower').checked = rd.muscleLower || false;
     $('exStretch').checked = rd.stretch || false;
@@ -257,7 +289,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
     });
     const moodEl = document.querySelector('input[name="mood"]:checked');
     const moodVal = moodEl ? moodEl.value : '';
-    const data = JSON.parse(localStorage.getItem('myHealthData') || '{}');
+    const data = getSafeData();
     const newData = { ...(data[d]||{}), weight:parseFloat(w), mood:moodVal, run:$('exRun').checked, runKm:$('exRun').checked?parseFloat($('runDistInput').value||0):0,
       muscleUpper:$('exMuscleUpper').checked, muscleLower:$('exMuscleLower').checked, stretch:$('exStretch').checked,
       lunchType:$('lunchSelect').value, lunchCount:parseInt($('lunchCount').value\vert{}\vert{}0), lunchMemo:$('lunchMemo').value,
@@ -272,7 +304,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
   }
 
   function updateHistoryList() {
-    const raw = JSON.parse(localStorage.getItem('myHealthData') || '{}');
+    const raw = getSafeData();
     const dates = Object.keys(raw).sort((a,b)=>b.localeCompare(a));
     if(!dates.length) { $('summaryContainer').innerHTML='データなし'; $('historyContainer').innerHTML='<p>記録がありません</p>'; $('streakBadge').innerHTML='記録なし'; return; }
     
@@ -333,7 +365,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
   }
 
   function getCSVData() {
-    const raw = JSON.parse(localStorage.getItem('myHealthData') || '{}');
+    const raw = getSafeData();
     const dates = Object.keys(raw).sort(); if(!dates.length) return null;
     let csv="日付(曜日),平日/休日,気分,体重,運動,運動消費(kcal),昼食,間食,間食摂取(kcal),収支(kcal),外食飲酒等,体調・疲労,メモ\n";
     const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
@@ -365,7 +397,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
 
   function drawChart(days) {
     ['btn1w','btn1m','btn6m'].forEach(id => $(id).classList.remove('active'));$(days===7?'btn1w':days===30?'btn1m':'btn6m').classList.add('active');
-    const raw=JSON.parse(localStorage.getItem('myHealthData') || '{}');
+    const raw=getSafeData();
     const labels=[], w=[], cols=[], mAvgs=[], today=new Date();
     for(let i=days-1; i>=0; i--) {
       const d=new Date(today); d.setDate(d.getDate()-i); const ds = fmtDate(d);
