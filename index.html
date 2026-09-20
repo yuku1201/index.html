@@ -57,7 +57,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
 </style></head>
 <body>
 <div class="card">
-  <button class="btn-force-reload" onclick="window.location.href = window.location.href.split('?')[0] + '?v=' + new Date().getTime();">🔄 最新版に強制アップデート（画面がおかしい時）</button>
+  <button class="btn-force-reload" onclick="window.location.href = window.location.href.split('?')[0] + '?v=' + new Date().getTime();">🔄 最新版に強制アップデート</button>
 
   <h2>記録・修正 <span id="streakBadge">記録なし</span></h2>
   <div id="feedbackBanner" class="hidden"></div>
@@ -467,10 +467,15 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
     } catch(e) { logError("drawChart", e); }
   } 
 
-  window.addEventListener('DOMContentLoaded', () => {
+  // 問答無用で即時実行（待機命令を完全削除）
+  try {
     $('dateInput').value = fmtDate(new Date());
-    setTimeout(() => { loadDataForDate(); updateHistoryList(); drawChart(30); }, 200);
-  });
+    loadDataForDate();
+    updateHistoryList();
+    drawChart(30);
+  } catch(e) {
+    logError("InitialExecution", e);
+  }
 </script>
 </body>
 </html>
