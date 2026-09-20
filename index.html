@@ -130,11 +130,31 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
 </div>
 
 <script>
+  // === 【緊急データ復旧プログラム】 ===
+  // 過去のスラッシュ区切り(2026/09/17)をハイフン(2026-09-17)に自動変換して救出します
+  (function autoFixDates() {
+    let raw = JSON.parse(localStorage.getItem('myHealthData') || '{}');
+    let changed = false;
+    Object.keys(raw).forEach(key => {
+      if(key.includes('/')) {
+        let newKey = key.replace(/\//g, '-');
+        raw[newKey] = raw[key];
+        delete raw[key];
+        changed = true;
+      }
+    });
+    if(changed) localStorage.setItem('myHealthData', JSON.stringify(raw));
+  })();
+  // ===================================
+
   const GOAL_KM = 100;
   const $ = id => document.getElementById(id);
   const lm = {'bento':'弁当','onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
   const md = {'good':'😄 最高！','soso':'🙂 まあまあ','bad':'😣 耐えた…'};
   const getL = (t,c,m) => !t?'':t==='other'?`その他(${m||''})`:t==='bento'?'弁当':`${lm[t]||''}${c||0}個`;
+  
+  // スマホごとの日付バグを防ぐための専用フォーマット関数
+  const fmtDate = d => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 
   $('exRun').addEventListener('change', () => $('runDistWrapper').classList.toggle('hidden', !$('exRun').checked));
   document.querySelectorAll('#exRun,#exMuscleUpper,#exMuscleLower,#exStretch').forEach(el => el.addEventListener('change', e => { if(e.target.checked) $('exNone').checked = false; }));$('exNone').addEventListener('change', e => { if(e.target.checked){ $('exRun').checked=$('exMuscleUpper').checked=$('exMuscleLower').checked=$('exStretch').checked=false; $('runDistWrapper').classList.add('hidden'); }});$('lunchSelect').addEventListener('change', e => { const o = e.target.value === 'other'; $('lunchCount').classList.toggle('hidden', o\vert{}\vert{}e.target.value==='bento');$('lunchMemo').classList.toggle('hidden', !o); });
@@ -223,7 +243,8 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
     $('memoInput').value = rd.memo || '';
     $('exRun').dispatchEvent(new Event('change'));$('feedbackBanner').classList.add('hidden');
   }
-  $('dateInput').addEventListener('change', loadDataForDate);$('dateInput').value = new Date().toLocaleDateString('sv-SE');
+  
+  $('dateInput').addEventListener('change', loadDataForDate);$('dateInput').value = fmtDate(new Date());
   loadDataForDate(); updateHistoryList();
 
   function saveData() {
@@ -257,14 +278,13 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
     
     let streak = 0; const today = new Date();
     for(let i=0; i<365; i++) {
-      const d = new Date(today); d.setDate(d.getDate()-i); const ds = d.toLocaleDateString('sv-SE');
+      const d = new Date(today); d.setDate(d.getDate()-i); const ds = fmtDate(d);
       if(raw[ds] && raw[ds].weight) streak++; else if(i > 0) break; 
     }
     $('streakBadge').innerHTML = streak > 0 ? `📅 連続記録：${streak}日目` : `記録なし`;
 
     let mRun=0, mBurn=0, mEat=0;
-    const todayStr = new Date().toLocaleDateString('sv-SE'); const todayDate = new Date(todayStr);
-    const currMonth = todayDate.getMonth();
+    const currMonth = today.getMonth();
     
     dates.forEach(d => {
       const rd = raw[d];
@@ -348,13 +368,13 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
     const raw=JSON.parse(localStorage.getItem('myHealthData') || '{}');
     const labels=[], w=[], cols=[], mAvgs=[], today=new Date();
     for(let i=days-1; i>=0; i--) {
-      const d=new Date(today); d.setDate(d.getDate()-i); const ds=d.toLocaleDateString('sv-SE');
+      const d=new Date(today); d.setDate(d.getDate()-i); const ds = fmtDate(d);
       labels.push(ds.slice(5).replace('-','/')); const rd=raw[ds];
       if(rd&&rd.weight) {
         w.push(rd.weight); cols.push(rd.lunchOut||rd.dinnerOut||rd.alcohol||rd.salty||rd.noBM||rd.workStress||rd.musclePain ? 'rgba(220,53,69,1)' : (rd.run||rd.muscleUpper||rd.muscleLower||rd.muscle ? 'rgba(40,167,69,1)' : 'rgba(79,172,254,1)'));
       } else { w.push(null); cols.push('rgba(79,172,254,1)'); }
       let s=0, c=0;
-      for(let j=0; j<7; j++) { const pd=new Date(today); pd.setDate(pd.getDate()-(i+j)); const pds=pd.toLocaleDateString('sv-SE'); if(raw[pds]&&raw[pds].weight){ s+=raw[pds].weight; c++; } }
+      for(let j=0; j<7; j++) { const pd=new Date(today); pd.setDate(pd.getDate()-(i+j)); const pds = fmtDate(pd); if(raw[pds]&&raw[pds].weight){ s+=raw[pds].weight; c++; } }
       mAvgs.push(c>0 ? (s/c).toFixed(2) : null);
     }
     
@@ -366,7 +386,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       ]},
       options: { responsive:true, scales: { x: { grid: { display: false } }, y: { grace: '10%', grid: { color: '#f0f2f5' } } }, plugins: { legend:{display:true}, tooltip:{callbacks:{afterLabel:ctx=>{
         if(ctx.datasetIndex===0)return; const d=new Date(today); d.setDate(d.getDate()-(days-1)+ctx.dataIndex);
-        const rd=raw[d.toLocaleDateString('sv-SE')]; if(!rd)return[];
+        const rd=raw[fmtDate(d)]; if(!rd)return[];
         const dtls=[]; const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
         let lTxt = getL(rd.lunchType, rd.lunchCount, rd.lunchMemo); if(rd.lunchType2) lTxt += ' ＋ ' + getL(rd.lunchType2, rd.lunchCount2, rd.lunchMemo2);
         dtls.push(`昼食: ${lTxt}`);
