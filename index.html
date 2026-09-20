@@ -48,9 +48,13 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
 #chartModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:15px;box-sizing:border-box}
 .modal-content{background:#fff;width:100%;border-radius:20px;padding:24px;box-sizing:border-box;position:relative}
 .close-btn{position:absolute;top:10px;right:20px;font-size:28px;cursor:pointer;font-weight:bold;color:#999}
+.btn-force-reload{background:#dc3545;color:#fff;border:none;padding:12px;border-radius:12px;width:100%;font-weight:bold;margin-bottom:20px;cursor:pointer;box-shadow:0 4px 8px rgba(220,53,69,0.2);}
 </style></head>
 <body>
 <div class="card">
+  <!-- キャッシュ強制突破ボタン -->
+  <button class="btn-force-reload" onclick="window.location.href = window.location.href.split('?')[0] + '?v=' + new Date().getTime();">🔄 最新版に強制アップデート（データが出ない時）</button>
+
   <h2>記録・修正 <span id="streakBadge" onclick="alert('【連続記録ストリーク】\nカロリーの赤字・黒字に関わらず、ごまかさずに体重と食事を記録し続けた連続日数です。')">記録なし</span></h2>
   <div id="feedbackBanner" class="hidden"></div>
   <label>日付</label><input type="date" id="dateInput">
@@ -104,7 +108,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
 
 <div class="card">
   <h2>データ分析</h2>
-  <div id="chartErrorMsg" style="color:#dc3545;font-size:12px;display:none;">※通信環境によりグラフが読み込めませんでした</div>
+  <div id="chartErrorMsg" style="color:#dc3545;font-size:12px;display:none;margin-bottom:10px;">※グラフの読込中、または通信環境によりグラフが表示できません</div>
   <canvas id="weightChart"></canvas>
   <button class="btn-zoom" onclick="document.getElementById('chartModal').classList.remove('hidden')">🔍 グラフを全画面で拡大表示</button>
   <div class="btn-group" style="margin-top:15px;"><button id="btn1w" onclick="drawChart(7)">1週間</button><button id="btn1m" onclick="drawChart(30)">1ヶ月</button><button id="btn6m" onclick="drawChart(180)">半年</button></div>
@@ -150,7 +154,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
         <select class="snack-time" style="flex:2;">
           <option value="">タイミング</option><option value="morning" ${time==='morning'?'selected':''}>朝</option><option value="noon" ${time==='noon'?'selected':''}>昼</option>
           <option value="evening" ${time==='evening'?'selected':''}>夕方</option><option value="before_dinner" ${time==='before_dinner'?'selected':''}>夕食前</option>
-          <option value="after_dinner" ${time==='after_dinner'?'selected':''}>夕食後</option><option value="night" ${time==='night'?'selected':''} style="display:none;">夜(旧)</option>
+          <option value="after_dinner" ${time==='after_dinner'?'selected':''}>夕食後</option>
         </select>
         <input type="number" class="snack-cal" style="flex:2;" min="0" placeholder="kcal" value="${cal}">
         <button type="button" class="btn-remove-snack" style="flex:0.6;" onclick="this.parentElement.parentElement.remove()">✖</button>
@@ -237,7 +241,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       $('tagNoBM').checked = rd.noBM || false; $('tagWorkStress').checked = rd.workStress \vert{}\vert{} false; $('tagMusclePain').checked = rd.musclePain || false;
       $('memoInput').value = rd.memo || '';
       $('exRun').dispatchEvent(new Event('change'));$('feedbackBanner').classList.add('hidden');
-    } catch(e) { console.error("Load Error", e); }
+    } catch(e) { console.error(e); }
   }
   
   $('dateInput').addEventListener('change', loadDataForDate);$('dateInput').value = fmtDate(new Date());
@@ -265,7 +269,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       showFeedback(newData);
       drawChart(30); updateHistoryList();
       window.scrollTo({top: 0, behavior: 'smooth'});
-    } catch(e) { alert("保存中にエラーが発生しました: " + e.message); }
+    } catch(e) { alert("保存エラー: " + e.message); }
   }
 
   function updateHistoryList() {
@@ -286,14 +290,18 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       const currMonth = today.getMonth();
       
       dates.forEach(d => {
-        const rd = raw[d];
-        const dObj = new Date(d.replace(/-/g, '/'));
-        if(rd.weight && !isNaN(dObj) && dObj.getMonth() === currMonth) { 
-          if(rd.run) mRun += rd.runKm||0;
-          let burn = 0; if(rd.run) burn += Math.round(rd.weight * rd.runKm);
-          if(rd.muscleUpper||rd.muscle) burn += 100; if(rd.muscleLower) burn += 100; if(rd.stretch) burn += 30;
-          mBurn += burn; if(rd.snacks) rd.snacks.forEach(s => mEat += (parseInt(s.cal)||0));
-        }
+        try {
+          const rd = raw[d];
+          const dParts = d.split('-');
+          if(dParts.length !== 3) return;
+          const dMonth = parseInt(dParts[1], 10) - 1;
+          if(rd.weight && dMonth === currMonth) { 
+            if(rd.run) mRun += rd.runKm||0;
+            let burn = 0; if(rd.run) burn += Math.round(rd.weight * rd.runKm);
+            if(rd.muscleUpper||rd.muscle) burn += 100; if(rd.muscleLower) burn += 100; if(rd.stretch) burn += 30;
+            mBurn += burn; if(rd.snacks) rd.snacks.forEach(s => mEat += (parseInt(s.cal)||0));
+          }
+        } catch(e) {}
       });
       
       const progPct = Math.min(100, (mRun / GOAL_KM) * 100);
@@ -309,30 +317,30 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       let html='';
       const tm = {'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
       dates.forEach(d => {
-        const r = raw[d]; if(!r.weight) return;
-        let burn = 0; if(r.run && r.runKm) burn += Math.round(r.weight * r.runKm);
-        if(r.muscleUpper || r.muscle) burn += 100; if(r.muscleLower) burn += 100; if(r.stretch) burn += 30;
-        let eat = 0; if(r.snacks) r.snacks.forEach(s => eat += (parseInt(s.cal)||0));
-        
-        const bal = burn - eat;
-        const balHtml = bal >= 0 ? `<div class="bal-box bal-plus">🔥消費${burn} - 🍩間食${eat} = ＋${bal}kcal</div>` : `<div class="bal-box bal-minus">🔥消費${burn} - 🍩間食${eat} = ${bal}kcal</div>`;
-        let isPerfect = r.run && (bal >= 0) && !r.lunchOut && !r.dinnerOut && !r.alcohol && !r.salty;
-        const perfHtml = isPerfect ? `<span style="background:linear-gradient(45deg, #ffd700, #ffa500);color:#fff;font-size:11px;padding:2px 8px;border-radius:12px;margin-left:8px;font-weight:bold;">👑 PERFECT</span>` : '';
+        try {
+          const r = raw[d]; if(!r.weight) return;
+          let burn = 0; if(r.run && r.runKm) burn += Math.round(r.weight * r.runKm);
+          if(r.muscleUpper || r.muscle) burn += 100; if(r.muscleLower) burn += 100; if(r.stretch) burn += 30;
+          let eat = 0; if(r.snacks) r.snacks.forEach(s => eat += (parseInt(s.cal)||0));
+          
+          const bal = burn - eat;
+          const balHtml = bal >= 0 ? `<div class="bal-box bal-plus">🔥消費${burn} - 🍩間食${eat} = ＋${bal}kcal</div>` : `<div class="bal-box bal-minus">🔥消費${burn} - 🍩間食${eat} = ${bal}kcal</div>`;
+          let isPerfect = r.run && (bal >= 0) && !r.lunchOut && !r.dinnerOut && !r.alcohol && !r.salty;
+          const perfHtml = isPerfect ? `<span style="background:linear-gradient(45deg, #ffd700, #ffa500);color:#fff;font-size:11px;padding:2px 8px;border-radius:12px;margin-left:8px;font-weight:bold;">👑 PERFECT</span>` : '';
 
-        const ex=[]; if(r.run) ex.push(`ラン${r.runKm}km`); if(r.muscleUpper||r.muscle) ex.push('筋(上)'); if(r.muscleLower) ex.push('筋(下)'); if(r.stretch) ex.push('ｽﾄﾚｯﾁ');
-        let lTxt = getL(r.lunchType, r.lunchCount, r.lunchMemo); if(r.lunchType2) lTxt += ' ＋ ' + getL(r.lunchType2, r.lunchCount2, r.lunchMemo2);
-        const sTxt = (r.snacks&&r.snacks.length) ? r.snacks.map(s=>`${tm[s.time]||''} ${s.content}(${s.cal?s.cal+'kcal':''})`).join(', ') : 'なし';
-        const tgs=[]; if(r.holiday) tgs.push("休日"); if(r.lunchOut) tgs.push("昼外食"); if(r.dinnerOut) tgs.push("夜外食"); if(r.alcohol) tgs.push("飲酒"); if(r.salty) tgs.push("塩分多め");
-        if(r.noBM) tgs.push("便通なし"); if(r.workStress) tgs.push("残業/ｽﾄﾚｽ"); if(r.musclePain) tgs.push("筋肉痛/疲労");
-        const moodTxt = r.mood ? `<span style="margin-right:8px;font-size:16px;">${md[r.mood]}</span>` : '';
+          const ex=[]; if(r.run) ex.push(`ラン${r.runKm}km`); if(r.muscleUpper||r.muscle) ex.push('筋(上)'); if(r.muscleLower) ex.push('筋(下)'); if(r.stretch) ex.push('ｽﾄﾚｯﾁ');
+          let lTxt = getL(r.lunchType, r.lunchCount, r.lunchMemo); if(r.lunchType2) lTxt += ' ＋ ' + getL(r.lunchType2, r.lunchCount2, r.lunchMemo2);
+          const sTxt = (r.snacks&&r.snacks.length) ? r.snacks.map(s=>`${tm[s.time]||''} ${s.content}(${s.cal?s.cal+'kcal':''})`).join(', ') : 'なし';
+          const tgs=[]; if(r.holiday) tgs.push("休日"); if(r.lunchOut) tgs.push("昼外食"); if(r.dinnerOut) tgs.push("夜外食"); if(r.alcohol) tgs.push("飲酒"); if(r.salty) tgs.push("塩分多め");
+          if(r.noBM) tgs.push("便通なし"); if(r.workStress) tgs.push("残業/ｽﾄﾚｽ"); if(r.musclePain) tgs.push("筋肉痛/疲労");
+          const moodTxt = r.mood ? `<span style="margin-right:8px;font-size:16px;">${md[r.mood]}</span>` : '';
 
-        html += `<div style="border-bottom:1px solid #f0f2f5;padding:16px 0;"><div style="display:flex;align-items:center;margin-bottom:6px;">${moodTxt}<span style="font-weight:bold;color:#4facfe;font-size:16px;">${d} : ${r.weight}kg</span>${perfHtml}</div>
-          ${balHtml}
-          <div style="color:#666;line-height:1.6;margin-top:8px;font-size:13px;">🏃 ${ex.length?ex.join(', '):'なし'} | 🍙 ${lTxt}<br>🍩 間食: ${sTxt}<br>⚠️ 要因: ${tgs.length?tgs.join('・'):'なし'}${r.memo?`<br>📝 ${r.memo}`:''}</div></div>`;
+          html += `<div style="border-bottom:1px solid #f0f2f5;padding:16px 0;"><div style="display:flex;align-items:center;margin-bottom:6px;">${moodTxt}<span style="font-weight:bold;color:#4facfe;font-size:16px;">${d} : ${r.weight}kg</span>${perfHtml}</div>
+            ${balHtml}
+            <div style="color:#666;line-height:1.6;margin-top:8px;font-size:13px;">🏃 ${ex.length?ex.join(', '):'なし'} | 🍙 ${lTxt}<br>🍩 間食: ${sTxt}<br>⚠️ 要因: ${tgs.length?tgs.join('・'):'なし'}${r.memo?`<br>📝 ${r.memo}`:''}</div></div>`;
+        } catch(e) { html += `<div style="color:red;font-size:12px;">行エラー: ${e.message}</div>`; }
       }); $('historyContainer').innerHTML = html;
-    } catch(e) {
-      $('historyContainer').innerHTML = `<p style="color:red;font-size:12px;">履歴の表示中にエラーが発生しました: ${e.message}</p>`;
-    }
+    } catch(e) { $('historyContainer').innerHTML = `<p style="color:red;font-size:12px;">履歴エラー: ${e.message}</p>`; }
   }
 
   function getCSVData() {
@@ -344,8 +352,12 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       const dw=['日','月','火','水','木','金','土'];
       dates.forEach(d => {
         const r=raw[d], ex=[]; let burn = 0;
-        const dObj = new Date(d.replace(/-/g, '/'));
-        const dayStr = isNaN(dObj) ? '' : dw[dObj.getDay()];
+        const dParts = d.split('-');
+        let dayStr = '';
+        if(dParts.length === 3) {
+          const dObj = new Date(parseInt(dParts[0],10), parseInt(dParts[1],10)-1, parseInt(dParts[2],10));
+          if(!isNaN(dObj)) dayStr = dw[dObj.getDay()];
+        }
         if(r.run) { ex.push(`ラン${r.runKm}km`); burn += Math.round(r.weight * r.runKm); }
         if(r.muscleUpper||r.muscle) { ex.push('筋(上)'); burn += 100; }
         if(r.muscleLower) { ex.push('筋(下)'); burn += 100; }
@@ -424,10 +436,9 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       chartInstance = new Chart(ctx, getChartConfig());
       const mCtx=document.getElementById('modalCanvas').getContext('2d'); if(modalChartInstance) modalChartInstance.destroy();
       modalChartInstance = new Chart(mCtx, getChartConfig());
-    } catch(e) { console.error("Chart Error", e); }
+    } catch(e) { console.error(e); }
   } 
 
-  // 初回起動処理（エラーで止まらないように完全に独立）
   setTimeout(() => { loadDataForDate(); updateHistoryList(); drawChart(30); }, 100);
 </script>
 </body>
