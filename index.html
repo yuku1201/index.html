@@ -326,6 +326,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       if(r.stretch) { ex.push('ｽﾄﾚｯﾁ'); burn += 30; }
       let eat = 0; const sTxt = (r.snacks&&r.snacks.length) ? r.snacks.map(s=>{eat+=(parseInt(s.cal)||0); return `${tm[s.time]||s.time}:${s.content}(${s.cal}kcal)`;}).join(' / ') : 'なし';
       let lTxt = getL(r.lunchType, r.lunchCount, r.lunchMemo); if(r.lunchType2) lTxt += ' ＋ ' + getL(r.lunchType2, r.lunchCount2, r.lunchMemo2);
+      
       const tgs=[]; if(r.lunchOut) tgs.push("昼外"); if(r.dinnerOut) tgs.push("夜外"); if(r.alcohol) tgs.push("飲酒"); if(r.salty) tgs.push("塩分多め");
       const cond=[]; if(r.noBM) cond.push("便通なし"); if(r.workStress) cond.push("残業/ｽﾄﾚｽ"); if(r.musclePain) cond.push("筋肉痛/疲労");
       csv+=`${d}(${dw[new Date(d).getDay()]}),${r.holiday?'休日':'平日'},${md[r.mood]||''},${r.weight},${ex.length?ex.join('+'):'休'},${burn},${lTxt},${sTxt},${eat},${burn-eat},${tgs.length?tgs.join('・'):'無'},${cond.length?cond.join('・'):'通常'},${r.memo||''}\n`;
@@ -357,27 +358,31 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       mAvgs.push(c>0 ? (s/c).toFixed(2) : null);
     }
     
-    const chartConfig = { type: 'line', data: { labels, datasets: [
-      {label:'7日平均', data:mAvgs, borderColor:'rgba(255,193,7,0.8)', backgroundColor:'transparent', borderWidth:3, pointRadius:0, spanGaps:true, tension:0.4, order:1},
-      {label:'体重(kg)', data:w, borderColor:'rgba(79,172,254,0.3)', backgroundColor:'transparent', pointBackgroundColor:cols, pointBorderColor:cols, borderWidth:2, pointRadius:5, spanGaps:true, tension:0.2, order:2}
-    ]}, options: { responsive:true, scales: { x: { grid: { display: false } }, y: { grace: '10%', grid: { color: '#f0f2f5' } } }, plugins: { legend:{display:true}, tooltip:{callbacks:{afterLabel:ctx=>{
-      if(ctx.datasetIndex===0)return; const d=new Date(today); d.setDate(d.getDate()-(days-1)+ctx.dataIndex);
-      const rd=raw[d.toLocaleDateString('sv-SE')]; if(!rd)return[];
-      const dtls=[]; const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
-      let lTxt = getL(rd.lunchType, rd.lunchCount, rd.lunchMemo); if(rd.lunchType2) lTxt += ' ＋ ' + getL(rd.lunchType2, rd.lunchCount2, r.lunchMemo2);
-      dtls.push(`昼食: ${lTxt}`);
-      const tgs=[]; if(rd.holiday)tgs.push("休日"); if(rd.lunchOut)tgs.push("昼外食"); if(rd.dinnerOut)tgs.push("夜外食"); if(rd.alcohol)tgs.push("飲酒"); if(rd.salty)tgs.push("塩分多め");
-      if(rd.noBM)tgs.push("便通なし"); if(rd.workStress)tgs.push("残業/ｽﾄﾚｽ"); if(rd.musclePain)tgs.push("筋肉痛/疲労");
-      if(tgs.length) dtls.push(`要因: ${tgs.join(', ')}`);
-      if(rd.snacks) rd.snacks.forEach((s,i)=>dtls.push(`間食${i+1}: ${tm[s.time]||''} ${s.content} (${s.cal}kcal)`));
-      if(rd.mood) dtls.push(`気分: ${md[rd.mood]}`);
-      if(rd.memo) dtls.push(`メモ: ${rd.memo}`); return dtls;
-    }}}}}};
+    const getChartConfig = () => ({
+      type: 'line',
+      data: { labels, datasets: [
+        {label:'7日平均', data:mAvgs, borderColor:'rgba(255,193,7,0.8)', backgroundColor:'transparent', borderWidth:3, pointRadius:0, spanGaps:true, tension:0.4, order:1},
+        {label:'体重(kg)', data:w, borderColor:'rgba(79,172,254,0.3)', backgroundColor:'transparent', pointBackgroundColor:cols, pointBorderColor:cols, borderWidth:2, pointRadius:5, spanGaps:true, tension:0.2, order:2}
+      ]},
+      options: { responsive:true, scales: { x: { grid: { display: false } }, y: { grace: '10%', grid: { color: '#f0f2f5' } } }, plugins: { legend:{display:true}, tooltip:{callbacks:{afterLabel:ctx=>{
+        if(ctx.datasetIndex===0)return; const d=new Date(today); d.setDate(d.getDate()-(days-1)+ctx.dataIndex);
+        const rd=raw[d.toLocaleDateString('sv-SE')]; if(!rd)return[];
+        const dtls=[]; const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
+        let lTxt = getL(rd.lunchType, rd.lunchCount, rd.lunchMemo); if(rd.lunchType2) lTxt += ' ＋ ' + getL(rd.lunchType2, rd.lunchCount2, rd.lunchMemo2);
+        dtls.push(`昼食: ${lTxt}`);
+        const tgs=[]; if(rd.holiday)tgs.push("休日"); if(rd.lunchOut)tgs.push("昼外食"); if(rd.dinnerOut)tgs.push("夜外食"); if(rd.alcohol)tgs.push("飲酒"); if(rd.salty)tgs.push("塩分多め");
+        if(rd.noBM)tgs.push("便通なし"); if(rd.workStress)tgs.push("残業/ｽﾄﾚｽ"); if(rd.musclePain)tgs.push("筋肉痛/疲労");
+        if(tgs.length) dtls.push(`要因: ${tgs.join(', ')}`);
+        if(rd.snacks) rd.snacks.forEach((s,i)=>dtls.push(`間食${i+1}: ${tm[s.time]||''} ${s.content} (${s.cal}kcal)`));
+        if(rd.mood) dtls.push(`気分: ${md[rd.mood]}`);
+        if(rd.memo) dtls.push(`メモ: ${rd.memo}`); return dtls;
+      }}}}}
+    });
 
     const ctx=$('weightChart').getContext('2d'); if(chartInstance) chartInstance.destroy();
-    chartInstance = new Chart(ctx, chartConfig);
+    chartInstance = new Chart(ctx, getChartConfig());
     const mCtx=$('modalCanvas').getContext('2d'); if(modalChartInstance) modalChartInstance.destroy();
-    modalChartInstance = new Chart(mCtx, chartConfig);
+    modalChartInstance = new Chart(mCtx, getChartConfig());
   } drawChart(30);
 </script>
 </body>
