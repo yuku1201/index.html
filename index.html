@@ -1,5 +1,9 @@
 <!DOCTYPE html>
-<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"><title>体重・運動記録</title>
+<html lang="ja"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>体重・運動記録</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 body{font-family:'Helvetica Neue',Arial,sans-serif;padding:15px;margin:0;background:#f7f9fa;color:#444}
@@ -49,13 +53,13 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
 .modal-content{background:#fff;width:100%;border-radius:20px;padding:24px;box-sizing:border-box;position:relative}
 .close-btn{position:absolute;top:10px;right:20px;font-size:28px;cursor:pointer;font-weight:bold;color:#999}
 .btn-force-reload{background:#dc3545;color:#fff;border:none;padding:12px;border-radius:12px;width:100%;font-weight:bold;margin-bottom:20px;cursor:pointer;box-shadow:0 4px 8px rgba(220,53,69,0.2);}
+#errorLog{background:#ffe5e5;color:#dc3545;padding:10px;border-radius:8px;font-size:12px;margin-top:20px;display:none;font-family:monospace;white-space:pre-wrap;}
 </style></head>
 <body>
 <div class="card">
-  <!-- キャッシュ強制突破ボタン -->
-  <button class="btn-force-reload" onclick="window.location.href = window.location.href.split('?')[0] + '?v=' + new Date().getTime();">🔄 最新版に強制アップデート（データが出ない時）</button>
+  <button class="btn-force-reload" onclick="window.location.href = window.location.href.split('?')[0] + '?v=' + new Date().getTime();">🔄 最新版に強制アップデート（画面がおかしい時）</button>
 
-  <h2>記録・修正 <span id="streakBadge" onclick="alert('【連続記録ストリーク】\nカロリーの赤字・黒字に関わらず、ごまかさずに体重と食事を記録し続けた連続日数です。')">記録なし</span></h2>
+  <h2>記録・修正 <span id="streakBadge">記録なし</span></h2>
   <div id="feedbackBanner" class="hidden"></div>
   <label>日付</label><input type="date" id="dateInput">
   <label>体重 (kg)</label><input type="number" step="0.1" id="weightInput" placeholder="例: 65.5">
@@ -108,7 +112,6 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
 
 <div class="card">
   <h2>データ分析</h2>
-  <div id="chartErrorMsg" style="color:#dc3545;font-size:12px;display:none;margin-bottom:10px;">※グラフの読込中、または通信環境によりグラフが表示できません</div>
   <canvas id="weightChart"></canvas>
   <button class="btn-zoom" onclick="document.getElementById('chartModal').classList.remove('hidden')">🔍 グラフを全画面で拡大表示</button>
   <div class="btn-group" style="margin-top:15px;"><button id="btn1w" onclick="drawChart(7)">1週間</button><button id="btn1m" onclick="drawChart(30)">1ヶ月</button><button id="btn6m" onclick="drawChart(180)">半年</button></div>
@@ -123,6 +126,9 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
   <div id="summaryContainer"></div><div id="historyContainer"></div>
 </div>
 
+<!-- 監視モニター（通常は見えません） -->
+<div id="errorLog"></div>
+
 <div id="chartModal" class="hidden">
   <div class="modal-content">
     <span class="close-btn" onclick="document.getElementById('chartModal').classList.add('hidden')">×</span>
@@ -132,6 +138,13 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
 </div>
 
 <script>
+  function logError(msg, err) {
+    const el = document.getElementById('errorLog');
+    el.style.display = 'block';
+    el.innerText += `\n[${msg}] ${err.message}\n${err.stack || ''}`;
+    console.error(msg, err);
+  }
+
   const GOAL_KM = 100;
   const $ = id => document.getElementById(id);
   const lm = {'bento':'弁当','onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
@@ -148,48 +161,48 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
   $('lunchSelect2').addEventListener('change', e => { const o = e.target.value === 'other';$('lunchCount2').classList.toggle('hidden', o||['bento',''].includes(e.target.value)); $('lunchMemo2').classList.toggle('hidden', !o); });$('btnAddLunch').addEventListener('click', () => { $('lunchRow2').classList.remove('hidden');$('btnAddLunch').style.display='none'; });
 
   function addSnackRow(time='', cal='', content='') {
-    const div = document.createElement('div'); div.className = 'snack-item';
-    div.innerHTML = `
-      <div class="row" style="margin-bottom:8px;">
-        <select class="snack-time" style="flex:2;">
-          <option value="">タイミング</option><option value="morning" ${time==='morning'?'selected':''}>朝</option><option value="noon" ${time==='noon'?'selected':''}>昼</option>
-          <option value="evening" ${time==='evening'?'selected':''}>夕方</option><option value="before_dinner" ${time==='before_dinner'?'selected':''}>夕食前</option>
-          <option value="after_dinner" ${time==='after_dinner'?'selected':''}>夕食後</option>
-        </select>
-        <input type="number" class="snack-cal" style="flex:2;" min="0" placeholder="kcal" value="${cal}">
-        <button type="button" class="btn-remove-snack" style="flex:0.6;" onclick="this.parentElement.parentElement.remove()">✖</button>
-      </div>
-      <input type="text" class="snack-content" placeholder="内容 (例: チョコ)" value="${content}">
-    `;
-    $('snackContainer').appendChild(div);
+    try {
+      const div = document.createElement('div'); div.className = 'snack-item';
+      div.innerHTML = `
+        <div class="row" style="margin-bottom:8px;">
+          <select class="snack-time" style="flex:2;">
+            <option value="">タイミング</option><option value="morning" ${time==='morning'?'selected':''}>朝</option><option value="noon" ${time==='noon'?'selected':''}>昼</option>
+            <option value="evening" ${time==='evening'?'selected':''}>夕方</option><option value="before_dinner" ${time==='before_dinner'?'selected':''}>夕食前</option>
+            <option value="after_dinner" ${time==='after_dinner'?'selected':''}>夕食後</option>
+          </select>
+          <input type="number" class="snack-cal" style="flex:2;" min="0" placeholder="kcal" value="${cal}">
+          <button type="button" class="btn-remove-snack" style="flex:0.6;" onclick="this.parentElement.parentElement.remove()">✖</button>
+        </div>
+        <input type="text" class="snack-content" placeholder="内容 (例: チョコ)" value="${content}">
+      `;
+      $('snackContainer').appendChild(div);
+    } catch(err) { logError("addSnackRow", err); }
   }
 
   function showFeedback(r) {
-    const b = $('feedbackBanner'); b.classList.remove('hidden');
-    let burn = 0;
-    if(r.run && r.runKm) burn += Math.round(r.weight * r.runKm);
-    if(r.muscleUpper || r.muscle) burn += 100; if(r.muscleLower) burn += 100; if(r.stretch) burn += 30;
-    let eat = 0; if(r.snacks) r.snacks.forEach(s => eat += (parseInt(s.cal)||0));
-    const bal = burn - eat;
-    const hasNoise = r.lunchOut || r.dinnerOut || r.alcohol || r.salty || r.noBM;
+    try {
+      const b = $('feedbackBanner'); b.classList.remove('hidden');
+      let burn = 0;
+      if(r.run && r.runKm) burn += Math.round(r.weight * r.runKm);
+      if(r.muscleUpper || r.muscle) burn += 100; if(r.muscleLower) burn += 100; if(r.stretch) burn += 30;
+      let eat = 0; 
+      if(Array.isArray(r.snacks)) r.snacks.forEach(s => eat += (parseInt(s.cal)||0));
+      const bal = burn - eat;
+      const hasNoise = r.lunchOut || r.dinnerOut || r.alcohol || r.salty || r.noBM;
 
-    let msg1 = "";
-    if (r.run && bal >= 0 && !hasNoise) {
-      msg1 = "完璧なコントロールですね！文句なしのコンディション管理、本当にお見事です👏";
-    } else if (bal < 0) {
-      msg1 = "間食の記録バッチリです。「なぜ増えたか」が後から分かるようになるので、この正直さが最大の武器です✨";
-    } else if (hasNoise) {
-      msg1 = "ノイズ要因もしっかり記録できていますね。明日体重が増えても「水分だ」と笑って流しましょう💧";
-    } else if (r.run) {
-      msg1 = "走った記録がしっかり残っていますね！着実に力がついている証拠です🔥";
-    }
+      let msg1 = "";
+      if (r.run && bal >= 0 && !hasNoise) msg1 = "完璧なコントロールですね！文句なしのコンディション管理、本当にお見事です👏";
+      else if (bal < 0) msg1 = "間食の記録バッチリです。「なぜ増えたか」が後から分かるようになるので、この正直さが最大の武器です✨";
+      else if (hasNoise) msg1 = "ノイズ要因もしっかり記録できていますね。明日体重が増えても「水分だ」と笑って流しましょう💧";
+      else if (r.run) msg1 = "走った記録がしっかり残っていますね！着実に力がついている証拠です🔥";
 
-    let msg2 = "";
-    if (r.mood === 'good') msg2 = "「最高！」の気分で終えられたのが何よりの収穫ですね😄";
-    else if (r.mood === 'bad') msg2 = "しんどい日もこうして記録を開いたご自身を、まずは褒めてあげてください🍀";
-    else msg2 = "今日も1日お疲れ様でした！コツコツと自分に向き合えていて素晴らしいです！";
-    
-    b.innerHTML = msg1 ? `${msg1}<br>${msg2}` : msg2;
+      let msg2 = "";
+      if (r.mood === 'good') msg2 = "「最高！」の気分で終えられたのが何よりの収穫ですね😄";
+      else if (r.mood === 'bad') msg2 = "しんどい日もこうして記録を開いたご自身を、まずは褒めてあげてください🍀";
+      else msg2 = "今日も1日お疲れ様でした！コツコツと自分に向き合えていて素晴らしいです！";
+      
+      b.innerHTML = msg1 ? `${msg1}<br>${msg2}` : msg2;
+    } catch(err) { logError("showFeedback", err); }
   }
 
   function getSafeData() {
@@ -208,7 +221,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       });
       if(changed) localStorage.setItem('myHealthData', JSON.stringify(fixed));
       return fixed;
-    } catch(e) { return {}; }
+    } catch(e) { logError("getSafeData", e); return {}; }
   }
 
   function loadDataForDate() {
@@ -227,24 +240,27 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       $('exMuscleLower').checked = rd.muscleLower || false;
       $('exStretch').checked = rd.stretch || false;
       $('exNone').checked = (rd.weight && !rd.run && !rd.muscleUpper && !rd.muscleLower && !rd.stretch && !rd.muscle) ? true : false;
-      let lt = rd.lunchType || rd.lunch || 'bento'; if(lt==='onigiri') lt='onigiri_low';
+      
+      let lt = rd.lunchType || rd.lunch || 'bento'; 
+      if(lt==='onigiri') lt='onigiri_low';
       $('lunchSelect').value = lt; $('lunchCount').value = rd.lunchCount || ''; $('lunchMemo').value = rd.lunchMemo \vert{}\vert{} '';$('lunchSelect').dispatchEvent(new Event('change'));
       
       if(rd.lunchType2) { $('lunchRow2').classList.remove('hidden'); $('btnAddLunch').style.display='none';$('lunchSelect2').value=rd.lunchType2; $('lunchCount2').value=rd.lunchCount2\vert{}\vert{}'';$('lunchMemo2').value=rd.lunchMemo2||''; }
       else { $('lunchRow2').classList.add('hidden');$('btnAddLunch').style.display='block'; $('lunchSelect2').value='';$('lunchCount2').value=''; $('lunchMemo2').value=''; }$('lunchSelect2').dispatchEvent(new Event('change'));
 
       $('snackContainer').innerHTML = '';
-      if(rd.snacks) rd.snacks.forEach(s => addSnackRow(s.time, s.cal, s.content));
+      if(Array.isArray(rd.snacks)) rd.snacks.forEach(s => addSnackRow(s.time, s.cal, s.content));
+      
       $('tagHoliday').checked = rd.holiday || false;
       $('tagLunchOut').checked = rd.lunchOut \vert{}\vert{} false; $('tagDinnerOut').checked = rd.dinnerOut || false;
       $('tagAlcohol').checked = rd.alcohol \vert{}\vert{} false; $('tagSalty').checked = rd.salty || false;
       $('tagNoBM').checked = rd.noBM || false; $('tagWorkStress').checked = rd.workStress \vert{}\vert{} false; $('tagMusclePain').checked = rd.musclePain || false;
       $('memoInput').value = rd.memo || '';
       $('exRun').dispatchEvent(new Event('change'));$('feedbackBanner').classList.add('hidden');
-    } catch(e) { console.error(e); }
+    } catch(e) { logError("loadDataForDate", e); }
   }
   
-  $('dateInput').addEventListener('change', loadDataForDate);$('dateInput').value = fmtDate(new Date());
+  $('dateInput').addEventListener('change', loadDataForDate);
 
   function saveData() {
     try {
@@ -269,7 +285,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       showFeedback(newData);
       drawChart(30); updateHistoryList();
       window.scrollTo({top: 0, behavior: 'smooth'});
-    } catch(e) { alert("保存エラー: " + e.message); }
+    } catch(e) { logError("saveData", e); alert("保存エラーが発生しました"); }
   }
 
   function updateHistoryList() {
@@ -292,6 +308,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       dates.forEach(d => {
         try {
           const rd = raw[d];
+          if(!rd || typeof rd !== 'object') return;
           const dParts = d.split('-');
           if(dParts.length !== 3) return;
           const dMonth = parseInt(dParts[1], 10) - 1;
@@ -299,9 +316,10 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
             if(rd.run) mRun += rd.runKm||0;
             let burn = 0; if(rd.run) burn += Math.round(rd.weight * rd.runKm);
             if(rd.muscleUpper||rd.muscle) burn += 100; if(rd.muscleLower) burn += 100; if(rd.stretch) burn += 30;
-            mBurn += burn; if(rd.snacks) rd.snacks.forEach(s => mEat += (parseInt(s.cal)||0));
+            mBurn += burn; 
+            if(Array.isArray(rd.snacks)) rd.snacks.forEach(s => mEat += (parseInt(s.cal)||0));
           }
-        } catch(e) {}
+        } catch(err) { logError(`History Calc Error (${d})`, err); }
       });
       
       const progPct = Math.min(100, (mRun / GOAL_KM) * 100);
@@ -318,10 +336,10 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       const tm = {'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
       dates.forEach(d => {
         try {
-          const r = raw[d]; if(!r.weight) return;
+          const r = raw[d]; if(!r || !r.weight) return;
           let burn = 0; if(r.run && r.runKm) burn += Math.round(r.weight * r.runKm);
           if(r.muscleUpper || r.muscle) burn += 100; if(r.muscleLower) burn += 100; if(r.stretch) burn += 30;
-          let eat = 0; if(r.snacks) r.snacks.forEach(s => eat += (parseInt(s.cal)||0));
+          let eat = 0; if(Array.isArray(r.snacks)) r.snacks.forEach(s => eat += (parseInt(s.cal)||0));
           
           const bal = burn - eat;
           const balHtml = bal >= 0 ? `<div class="bal-box bal-plus">🔥消費${burn} - 🍩間食${eat} = ＋${bal}kcal</div>` : `<div class="bal-box bal-minus">🔥消費${burn} - 🍩間食${eat} = ${bal}kcal</div>`;
@@ -329,18 +347,23 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
           const perfHtml = isPerfect ? `<span style="background:linear-gradient(45deg, #ffd700, #ffa500);color:#fff;font-size:11px;padding:2px 8px;border-radius:12px;margin-left:8px;font-weight:bold;">👑 PERFECT</span>` : '';
 
           const ex=[]; if(r.run) ex.push(`ラン${r.runKm}km`); if(r.muscleUpper||r.muscle) ex.push('筋(上)'); if(r.muscleLower) ex.push('筋(下)'); if(r.stretch) ex.push('ｽﾄﾚｯﾁ');
-          let lTxt = getL(r.lunchType, r.lunchCount, r.lunchMemo); if(r.lunchType2) lTxt += ' ＋ ' + getL(r.lunchType2, r.lunchCount2, r.lunchMemo2);
-          const sTxt = (r.snacks&&r.snacks.length) ? r.snacks.map(s=>`${tm[s.time]||''} ${s.content}(${s.cal?s.cal+'kcal':''})`).join(', ') : 'なし';
+          
+          let lType = r.lunchType || r.lunch || '';
+          let lTxt = getL(lType, r.lunchCount, r.lunchMemo); 
+          if(r.lunchType2) lTxt += ' ＋ ' + getL(r.lunchType2, r.lunchCount2, r.lunchMemo2);
+          
+          const sTxt = (Array.isArray(r.snacks) && r.snacks.length) ? r.snacks.map(s=>`${tm[s.time]||''} ${s.content}(${s.cal?s.cal+'kcal':''})`).join(', ') : 'なし';
           const tgs=[]; if(r.holiday) tgs.push("休日"); if(r.lunchOut) tgs.push("昼外食"); if(r.dinnerOut) tgs.push("夜外食"); if(r.alcohol) tgs.push("飲酒"); if(r.salty) tgs.push("塩分多め");
           if(r.noBM) tgs.push("便通なし"); if(r.workStress) tgs.push("残業/ｽﾄﾚｽ"); if(r.musclePain) tgs.push("筋肉痛/疲労");
-          const moodTxt = r.mood ? `<span style="margin-right:8px;font-size:16px;">${md[r.mood]}</span>` : '';
+          const moodTxt = r.mood ? `<span style="margin-right:8px;font-size:16px;">${md[r.mood]||''}</span>` : '';
 
           html += `<div style="border-bottom:1px solid #f0f2f5;padding:16px 0;"><div style="display:flex;align-items:center;margin-bottom:6px;">${moodTxt}<span style="font-weight:bold;color:#4facfe;font-size:16px;">${d} : ${r.weight}kg</span>${perfHtml}</div>
             ${balHtml}
             <div style="color:#666;line-height:1.6;margin-top:8px;font-size:13px;">🏃 ${ex.length?ex.join(', '):'なし'} | 🍙 ${lTxt}<br>🍩 間食: ${sTxt}<br>⚠️ 要因: ${tgs.length?tgs.join('・'):'なし'}${r.memo?`<br>📝 ${r.memo}`:''}</div></div>`;
-        } catch(e) { html += `<div style="color:red;font-size:12px;">行エラー: ${e.message}</div>`; }
-      }); $('historyContainer').innerHTML = html;
-    } catch(e) { $('historyContainer').innerHTML = `<p style="color:red;font-size:12px;">履歴エラー: ${e.message}</p>`; }
+        } catch(err) { logError(`History Render Error (${d})`, err); }
+      }); 
+      $('historyContainer').innerHTML = html;
+    } catch(e) { logError("updateHistoryList", e); }
   }
 
   function getCSVData() {
@@ -351,25 +374,29 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
       const dw=['日','月','火','水','木','金','土'];
       dates.forEach(d => {
-        const r=raw[d], ex=[]; let burn = 0;
-        const dParts = d.split('-');
-        let dayStr = '';
-        if(dParts.length === 3) {
-          const dObj = new Date(parseInt(dParts[0],10), parseInt(dParts[1],10)-1, parseInt(dParts[2],10));
-          if(!isNaN(dObj)) dayStr = dw[dObj.getDay()];
-        }
-        if(r.run) { ex.push(`ラン${r.runKm}km`); burn += Math.round(r.weight * r.runKm); }
-        if(r.muscleUpper||r.muscle) { ex.push('筋(上)'); burn += 100; }
-        if(r.muscleLower) { ex.push('筋(下)'); burn += 100; }
-        if(r.stretch) { ex.push('ｽﾄﾚｯﾁ'); burn += 30; }
-        let eat = 0; const sTxt = (r.snacks&&r.snacks.length) ? r.snacks.map(s=>{eat+=(parseInt(s.cal)||0); return `${tm[s.time]||s.time}:${s.content}(${s.cal}kcal)`;}).join(' / ') : 'なし';
-        let lTxt = getL(r.lunchType, r.lunchCount, r.lunchMemo); if(r.lunchType2) lTxt += ' ＋ ' + getL(r.lunchType2, r.lunchCount2, r.lunchMemo2);
-        
-        const tgs=[]; if(r.lunchOut) tgs.push("昼外"); if(r.dinnerOut) tgs.push("夜外"); if(r.alcohol) tgs.push("飲酒"); if(r.salty) tgs.push("塩分多め");
-        const cond=[]; if(r.noBM) cond.push("便通なし"); if(r.workStress) cond.push("残業/ｽﾄﾚｽ"); if(r.musclePain) cond.push("筋肉痛/疲労");
-        csv+=`${d}(${dayStr}),${r.holiday?'休日':'平日'},${md[r.mood]||''},${r.weight},${ex.length?ex.join('+'):'休'},${burn},${lTxt},${sTxt},${eat},${burn-eat},${tgs.length?tgs.join('・'):'無'},${cond.length?cond.join('・'):'通常'},${r.memo||''}\n`;
+        try {
+          const r=raw[d], ex=[]; let burn = 0;
+          const dParts = d.split('-');
+          let dayStr = '';
+          if(dParts.length === 3) {
+            const dObj = new Date(parseInt(dParts[0],10), parseInt(dParts[1],10)-1, parseInt(dParts[2],10));
+            if(!isNaN(dObj)) dayStr = dw[dObj.getDay()];
+          }
+          if(r.run) { ex.push(`ラン${r.runKm}km`); burn += Math.round(r.weight * r.runKm); }
+          if(r.muscleUpper||r.muscle) { ex.push('筋(上)'); burn += 100; }
+          if(r.muscleLower) { ex.push('筋(下)'); burn += 100; }
+          if(r.stretch) { ex.push('ｽﾄﾚｯﾁ'); burn += 30; }
+          
+          let eat = 0; const sTxt = (Array.isArray(r.snacks)&&r.snacks.length) ? r.snacks.map(s=>{eat+=(parseInt(s.cal)||0); return `${tm[s.time]||s.time}:${s.content}(${s.cal}kcal)`;}).join(' / ') : 'なし';
+          let lType = r.lunchType || r.lunch || '';
+          let lTxt = getL(lType, r.lunchCount, r.lunchMemo); if(r.lunchType2) lTxt += ' ＋ ' + getL(r.lunchType2, r.lunchCount2, r.lunchMemo2);
+          
+          const tgs=[]; if(r.lunchOut) tgs.push("昼外"); if(r.dinnerOut) tgs.push("夜外"); if(r.alcohol) tgs.push("飲酒"); if(r.salty) tgs.push("塩分多め");
+          const cond=[]; if(r.noBM) cond.push("便通なし"); if(r.workStress) cond.push("残業/ｽﾄﾚｽ"); if(r.musclePain) cond.push("筋肉痛/疲労");
+          csv+=`${d}(${dayStr}),${r.holiday?'休日':'平日'},${md[r.mood]||''},${r.weight},${ex.length?ex.join('+'):'休'},${burn},${lTxt},${sTxt},${eat},${burn-eat},${tgs.length?tgs.join('・'):'無'},${cond.length?cond.join('・'):'通常'},${r.memo||''}\n`;
+        } catch(err) { logError(`CSV Error (${d})`, err); }
       }); return csv;
-    } catch(e) { return null; }
+    } catch(e) { logError("getCSVData", e); return null; }
   }
 
   function copyForAI() {
@@ -405,10 +432,9 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       }
       
       if(typeof Chart === 'undefined') {
-        document.getElementById('chartErrorMsg').style.display = 'block';
+        logError("Chart.js", new Error("CDNからグラフ描画機能が読み込めませんでした"));
         return;
       }
-      document.getElementById('chartErrorMsg').style.display = 'none';
 
       const getChartConfig = () => ({
         type: 'line',
@@ -417,18 +443,21 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
           {label:'体重(kg)', data:w, borderColor:'rgba(79,172,254,0.3)', backgroundColor:'transparent', pointBackgroundColor:cols, pointBorderColor:cols, borderWidth:2, pointRadius:5, spanGaps:true, tension:0.2, order:2}
         ]},
         options: { responsive:true, scales: { x: { grid: { display: false } }, y: { grace: '10%', grid: { color: '#f0f2f5' } } }, plugins: { legend:{display:true}, tooltip:{callbacks:{afterLabel:ctx=>{
-          if(ctx.datasetIndex===0)return; 
-          const d=new Date(today.getFullYear(), today.getMonth(), today.getDate() - (days-1) + ctx.dataIndex);
-          const rd=raw[fmtDate(d)]; if(!rd)return[];
-          const dtls=[]; const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
-          let lTxt = getL(rd.lunchType, rd.lunchCount, rd.lunchMemo); if(rd.lunchType2) lTxt += ' ＋ ' + getL(rd.lunchType2, rd.lunchCount2, rd.lunchMemo2);
-          dtls.push(`昼食: ${lTxt}`);
-          const tgs=[]; if(rd.holiday)tgs.push("休日"); if(rd.lunchOut)tgs.push("昼外食"); if(rd.dinnerOut)tgs.push("夜外食"); if(rd.alcohol)tgs.push("飲酒"); if(rd.salty)tgs.push("塩分多め");
-          if(rd.noBM)tgs.push("便通なし"); if(rd.workStress)tgs.push("残業/ｽﾄﾚｽ"); if(rd.musclePain)tgs.push("筋肉痛/疲労");
-          if(tgs.length) dtls.push(`要因: ${tgs.join(', ')}`);
-          if(rd.snacks) rd.snacks.forEach((s,i)=>dtls.push(`間食${i+1}: ${tm[s.time]||''} ${s.content} (${s.cal}kcal)`));
-          if(rd.mood) dtls.push(`気分: ${md[rd.mood]}`);
-          if(rd.memo) dtls.push(`メモ: ${rd.memo}`); return dtls;
+          try {
+            if(ctx.datasetIndex===0)return; 
+            const d=new Date(today.getFullYear(), today.getMonth(), today.getDate() - (days-1) + ctx.dataIndex);
+            const rd=raw[fmtDate(d)]; if(!rd)return[];
+            const dtls=[]; const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
+            let lType = rd.lunchType || rd.lunch || '';
+            let lTxt = getL(lType, rd.lunchCount, rd.lunchMemo); if(rd.lunchType2) lTxt += ' ＋ ' + getL(rd.lunchType2, rd.lunchCount2, rd.lunchMemo2);
+            dtls.push(`昼食: ${lTxt}`);
+            const tgs=[]; if(rd.holiday)tgs.push("休日"); if(rd.lunchOut)tgs.push("昼外食"); if(rd.dinnerOut)tgs.push("夜外食"); if(rd.alcohol)tgs.push("飲酒"); if(rd.salty)tgs.push("塩分多め");
+            if(rd.noBM)tgs.push("便通なし"); if(rd.workStress)tgs.push("残業/ｽﾄﾚｽ"); if(rd.musclePain)tgs.push("筋肉痛/疲労");
+            if(tgs.length) dtls.push(`要因: ${tgs.join(', ')}`);
+            if(Array.isArray(rd.snacks)) rd.snacks.forEach((s,i)=>dtls.push(`間食${i+1}: ${tm[s.time]||''} ${s.content} (${s.cal}kcal)`));
+            if(rd.mood) dtls.push(`気分: ${md[rd.mood]||''}`);
+            if(rd.memo) dtls.push(`メモ: ${rd.memo}`); return dtls;
+          } catch(err) { return ['読込エラー']; }
         }}}}}
       });
 
@@ -436,10 +465,13 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       chartInstance = new Chart(ctx, getChartConfig());
       const mCtx=document.getElementById('modalCanvas').getContext('2d'); if(modalChartInstance) modalChartInstance.destroy();
       modalChartInstance = new Chart(mCtx, getChartConfig());
-    } catch(e) { console.error(e); }
+    } catch(e) { logError("drawChart", e); }
   } 
 
-  setTimeout(() => { loadDataForDate(); updateHistoryList(); drawChart(30); }, 100);
+  window.addEventListener('DOMContentLoaded', () => {
+    $('dateInput').value = fmtDate(new Date());
+    setTimeout(() => { loadDataForDate(); updateHistoryList(); drawChart(30); }, 200);
+  });
 </script>
 </body>
 </html>
