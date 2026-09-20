@@ -117,26 +117,6 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
   <div id="summaryContainer"></div><div id="historyContainer"></div>
 </div>
 
-<!-- 【最強版】緊急データ確認ツール（絶対に動く設計） -->
-<div class="card" style="background:#fff8e1; border:2px solid #ffc107;">
-  <h2 style="color:#b28900; font-size:1em; margin-bottom:5px;">🔧 緊急データ抽出ツール</h2>
-  <p style="font-size:12px; color:#856404; margin-top:0;">スマホの金庫（4.6KB）を直接こじ開けます。</p>
-  <button onclick="
-    try {
-      var s = '';
-      for(var i=0; i<localStorage.length; i++){
-        var k = localStorage.key(i);
-        s += '【' + k + '】\n' + localStorage.getItem(k) + '\n\n';
-      }
-      document.getElementById('rawData').value = s ? s : '空っぽです（0件）';
-    } catch(e) {
-      document.getElementById('rawData').value = 'エラー: ' + e.message;
-    }
-  " style="padding:12px; background:#ffc107; color:#333; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px; width:100%; cursor:pointer;">1. 金庫の中身を強制表示する</button>
-  <textarea id="rawData" style="width:100%; height:120px; font-size:12px; border:1px solid #ccc; border-radius:8px; padding:8px; box-sizing:border-box;" readonly placeholder="ここにデータが出現します..."></textarea>
-  <button onclick="navigator.clipboard.writeText(document.getElementById('rawData').value).then(()=>alert('コピーしました！チャットに貼り付けてください'))" style="padding:12px; background:#343a40; color:white; border:none; border-radius:8px; font-weight:bold; margin-top:10px; width:100%; cursor:pointer;">2. コピーしてAIに送る</button>
-</div>
-
 <div id="chartModal" class="hidden">
   <div class="modal-content">
     <span class="close-btn" onclick="document.getElementById('chartModal').classList.add('hidden')">×</span>
