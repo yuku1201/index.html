@@ -94,7 +94,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
     <label><input type="checkbox" id="tagWorkStress"><span class="tag-warn">残業/ｽﾄﾚｽ</span></label>
     <label><input type="checkbox" id="tagMusclePain"><span class="tag-warn">筋肉痛/疲労</span></label>
   </div>
-  <div style="font-size:12px;color:#4facfe;text-decoration:underline;margin-bottom:10px;display:inline-block;cursor:pointer;font-weight:bold;" onclick="$('saltyHint').classList.toggle('hidden')">💡塩分多めの基準を確認</div>
+  <div style="font-size:12px;color:#4facfe;text-decoration:underline;margin-bottom:10px;display:inline-block;cursor:pointer;font-weight:bold;" onclick="document.getElementById('saltyHint').classList.toggle('hidden')">💡塩分多めの基準を確認</div>
   <div id="saltyHint" class="hidden" style="font-size:12px;background:#fff8e1;color:#b28900;padding:12px;border-radius:12px;margin-bottom:10px;border:1px solid #ffe57f;line-height:1.5;">
     🍜 ラーメン・うどん等の汁 (半分以上)<br>🍛 カレー・丼もの・焼肉 (タレ多め)<br>🥓 ポテチ・ウインナー等 (食後に喉が渇く)
   </div>
@@ -103,17 +103,46 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
 </div>
 
 <div class="card">
+  <h2>データ分析</h2><canvas id="weightChart"></canvas>
+  <button class="btn-zoom" onclick="document.getElementById('chartModal').classList.remove('hidden')">🔍 グラフを全画面で拡大表示</button>
+  <div class="btn-group" style="margin-top:15px;"><button id="btn1w" onclick="drawChart(7)">1週間</button><button id="btn1m" onclick="drawChart(30)">1ヶ月</button><button id="btn6m" onclick="drawChart(180)">半年</button></div>
+  <div class="row" style="margin-top:15px;">
+    <button class="btn-export" onclick="copyForAI()">🤖 データコピー</button>
+    <button class="btn-export" style="background:#28a745;" onclick="downloadCSV()">💾 CSV保存</button>
+  </div>
+</div>
+
+<div class="card">
   <h2>過去の記録</h2>
   <div id="summaryContainer"></div><div id="historyContainer"></div>
 </div>
 
-<!-- 緊急データ確認ツール -->
+<!-- 【最強版】緊急データ確認ツール（絶対に動く設計） -->
 <div class="card" style="background:#fff8e1; border:2px solid #ffc107;">
-  <h2 style="color:#b28900; font-size:1em; margin-bottom:5px;">🔧 緊急データ確認ツール</h2>
-  <p style="font-size:12px; color:#856404; margin-top:0;">見えなくなっている4.6KBのデータを直接引っ張り出します。<br>ボタンを押し、下の枠に文字が出たら成功です！</p>
-  <button onclick="$('rawData').value = localStorage.getItem('myHealthData');" style="padding:12px; background:#ffc107; color:#333; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px; width:100%; cursor:pointer;">1. 金庫の中身を表示する</button>
+  <h2 style="color:#b28900; font-size:1em; margin-bottom:5px;">🔧 緊急データ抽出ツール</h2>
+  <p style="font-size:12px; color:#856404; margin-top:0;">スマホの金庫（4.6KB）を直接こじ開けます。</p>
+  <button onclick="
+    try {
+      var s = '';
+      for(var i=0; i<localStorage.length; i++){
+        var k = localStorage.key(i);
+        s += '【' + k + '】\n' + localStorage.getItem(k) + '\n\n';
+      }
+      document.getElementById('rawData').value = s ? s : '空っぽです（0件）';
+    } catch(e) {
+      document.getElementById('rawData').value = 'エラー: ' + e.message;
+    }
+  " style="padding:12px; background:#ffc107; color:#333; border:none; border-radius:8px; font-weight:bold; margin-bottom:10px; width:100%; cursor:pointer;">1. 金庫の中身を強制表示する</button>
   <textarea id="rawData" style="width:100%; height:120px; font-size:12px; border:1px solid #ccc; border-radius:8px; padding:8px; box-sizing:border-box;" readonly placeholder="ここにデータが出現します..."></textarea>
-  <button onclick="navigator.clipboard.writeText($('rawData').value).then(()=>alert('コピーしました！チャットに貼り付けてください'))" style="padding:12px; background:#343a40; color:white; border:none; border-radius:8px; font-weight:bold; margin-top:10px; width:100%; cursor:pointer;">2. コピーしてAIに送る</button>
+  <button onclick="navigator.clipboard.writeText(document.getElementById('rawData').value).then(()=>alert('コピーしました！チャットに貼り付けてください'))" style="padding:12px; background:#343a40; color:white; border:none; border-radius:8px; font-weight:bold; margin-top:10px; width:100%; cursor:pointer;">2. コピーしてAIに送る</button>
+</div>
+
+<div id="chartModal" class="hidden">
+  <div class="modal-content">
+    <span class="close-btn" onclick="document.getElementById('chartModal').classList.add('hidden')">×</span>
+    <h3 style="margin-top:0;font-size:16px;">拡大グラフ</h3>
+    <canvas id="modalCanvas"></canvas>
+  </div>
 </div>
 
 <script>
@@ -180,7 +209,19 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
   function getSafeData() {
     try {
       let v = localStorage.getItem('myHealthData');
-      return v ? JSON.parse(v) : {};
+      if(!v) return {};
+      let raw = JSON.parse(v);
+      let fixed = {};
+      let changed = false;
+      Object.keys(raw).forEach(k => {
+        let newK = k.replace(/\//g, '-');
+        let m = newK.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+        if(m) newK = m[1] + '-' + m[2].padStart(2,'0') + '-' + m[3].padStart(2,'0');
+        fixed[newK] = raw[k];
+        if(k !== newK) changed = true;
+      });
+      if(changed) localStorage.setItem('myHealthData', JSON.stringify(fixed));
+      return fixed;
     } catch(e) { return {}; }
   }
 
@@ -238,7 +279,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
     data[d] = newData;
     localStorage.setItem('myHealthData', JSON.stringify(data));
     showFeedback(newData);
-    updateHistoryList();
+    drawChart(30); updateHistoryList();
     window.scrollTo({top: 0, behavior: 'smooth'});
   }
 
@@ -302,6 +343,80 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
         <div style="color:#666;line-height:1.6;margin-top:8px;font-size:13px;">🏃 ${ex.length?ex.join(', '):'なし'} | 🍙 ${lTxt}<br>🍩 間食: ${sTxt}<br>⚠️ 要因: ${tgs.length?tgs.join('・'):'なし'}${r.memo?`<br>📝 ${r.memo}`:''}</div></div>`;
     }); $('historyContainer').innerHTML = html;
   }
+
+  function getCSVData() {
+    const raw = getSafeData();
+    const dates = Object.keys(raw).sort(); if(!dates.length) return null;
+    let csv="日付(曜日),平日/休日,気分,体重,運動,運動消費(kcal),昼食,間食,間食摂取(kcal),収支(kcal),外食飲酒等,体調・疲労,メモ\n";
+    const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
+    const dw=['日','月','火','水','木','金','土'];
+    dates.forEach(d => {
+      const r=raw[d], ex=[]; let burn = 0;
+      if(r.run) { ex.push(`ラン${r.runKm}km`); burn += Math.round(r.weight * r.runKm); }
+      if(r.muscleUpper||r.muscle) { ex.push('筋(上)'); burn += 100; }
+      if(r.muscleLower) { ex.push('筋(下)'); burn += 100; }
+      if(r.stretch) { ex.push('ｽﾄﾚｯﾁ'); burn += 30; }
+      let eat = 0; const sTxt = (r.snacks&&r.snacks.length) ? r.snacks.map(s=>{eat+=(parseInt(s.cal)||0); return `${tm[s.time]||s.time}:${s.content}(${s.cal}kcal)`;}).join(' / ') : 'なし';
+      let lTxt = getL(r.lunchType, r.lunchCount, r.lunchMemo); if(r.lunchType2) lTxt += ' ＋ ' + getL(r.lunchType2, r.lunchCount2, r.lunchMemo2);
+      
+      const tgs=[]; if(r.lunchOut) tgs.push("昼外"); if(r.dinnerOut) tgs.push("夜外"); if(r.alcohol) tgs.push("飲酒"); if(r.salty) tgs.push("塩分多め");
+      const cond=[]; if(r.noBM) cond.push("便通なし"); if(r.workStress) cond.push("残業/ｽﾄﾚｽ"); if(r.musclePain) cond.push("筋肉痛/疲労");
+      csv+=`${d}(${dw[new Date(d).getDay()]}),${r.holiday?'休日':'平日'},${md[r.mood]||''},${r.weight},${ex.length?ex.join('+'):'休'},${burn},${lTxt},${sTxt},${eat},${burn-eat},${tgs.length?tgs.join('・'):'無'},${cond.length?cond.join('・'):'通常'},${r.memo||''}\n`;
+    }); return csv;
+  }
+
+  function copyForAI() {
+    const csv = getCSVData(); if(!csv) return alert('データがありません');
+    navigator.clipboard.writeText(csv).then(()=>alert("コピーしました！")).catch(()=>alert("コピー失敗"));
+  }
+  function downloadCSV() {
+    const csv = getCSVData(); if(!csv) return alert('データがありません');
+    const blob = new Blob([new Uint8Array([0xEF, 0xBB, 0xBF]), csv], {type: 'text/csv;charset=utf-8;'});
+    const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "health_data.csv"; link.click();
+  }
+
+  function drawChart(days) {
+    ['btn1w','btn1m','btn6m'].forEach(id => document.getElementById(id).classList.remove('active'));
+    document.getElementById(days===7?'btn1w':days===30?'btn1m':'btn6m').classList.add('active');
+    const raw=getSafeData();
+    const labels=[], w=[], cols=[], mAvgs=[], today=new Date();
+    for(let i=days-1; i>=0; i--) {
+      const d=new Date(today); d.setDate(d.getDate()-i); const ds = fmtDate(d);
+      labels.push(ds.slice(5).replace('-','/')); const rd=raw[ds];
+      if(rd&&rd.weight) {
+        w.push(rd.weight); cols.push(rd.lunchOut||rd.dinnerOut||rd.alcohol||rd.salty||rd.noBM||rd.workStress||rd.musclePain ? 'rgba(220,53,69,1)' : (rd.run||rd.muscleUpper||rd.muscleLower||rd.muscle ? 'rgba(40,167,69,1)' : 'rgba(79,172,254,1)'));
+      } else { w.push(null); cols.push('rgba(79,172,254,1)'); }
+      let s=0, c=0;
+      for(let j=0; j<7; j++) { const pd=new Date(today); pd.setDate(pd.getDate()-(i+j)); const pds = fmtDate(pd); if(raw[pds]&&raw[pds].weight){ s+=raw[pds].weight; c++; } }
+      mAvgs.push(c>0 ? (s/c).toFixed(2) : null);
+    }
+    
+    const getChartConfig = () => ({
+      type: 'line',
+      data: { labels, datasets: [
+        {label:'7日平均', data:mAvgs, borderColor:'rgba(255,193,7,0.8)', backgroundColor:'transparent', borderWidth:3, pointRadius:0, spanGaps:true, tension:0.4, order:1},
+        {label:'体重(kg)', data:w, borderColor:'rgba(79,172,254,0.3)', backgroundColor:'transparent', pointBackgroundColor:cols, pointBorderColor:cols, borderWidth:2, pointRadius:5, spanGaps:true, tension:0.2, order:2}
+      ]},
+      options: { responsive:true, scales: { x: { grid: { display: false } }, y: { grace: '10%', grid: { color: '#f0f2f5' } } }, plugins: { legend:{display:true}, tooltip:{callbacks:{afterLabel:ctx=>{
+        if(ctx.datasetIndex===0)return; const d=new Date(today); d.setDate(d.getDate()-(days-1)+ctx.dataIndex);
+        const rd=raw[fmtDate(d)]; if(!rd)return[];
+        const dtls=[]; const tm={'morning':'朝','noon':'昼','evening':'夕方','before_dinner':'夕食前','after_dinner':'夕食後','night':'夜'};
+        let lTxt = getL(rd.lunchType, rd.lunchCount, rd.lunchMemo); if(rd.lunchType2) lTxt += ' ＋ ' + getL(rd.lunchType2, rd.lunchCount2, rd.lunchMemo2);
+        dtls.push(`昼食: ${lTxt}`);
+        const tgs=[]; if(rd.holiday)tgs.push("休日"); if(rd.lunchOut)tgs.push("昼外食"); if(rd.dinnerOut)tgs.push("夜外食"); if(rd.alcohol)tgs.push("飲酒"); if(rd.salty)tgs.push("塩分多め");
+        if(rd.noBM)tgs.push("便通なし"); if(rd.workStress)tgs.push("残業/ｽﾄﾚｽ"); if(rd.musclePain)tgs.push("筋肉痛/疲労");
+        if(tgs.length) dtls.push(`要因: ${tgs.join(', ')}`);
+        if(rd.snacks) rd.snacks.forEach((s,i)=>dtls.push(`間食${i+1}: ${tm[s.time]||''} ${s.content} (${s.cal}kcal)`));
+        if(rd.mood) dtls.push(`気分: ${md[rd.mood]}`);
+        if(rd.memo) dtls.push(`メモ: ${rd.memo}`); return dtls;
+      }}}}}
+    });
+
+    const ctx=document.getElementById('weightChart').getContext('2d'); if(chartInstance) chartInstance.destroy();
+    chartInstance = new Chart(ctx, getChartConfig());
+    const mCtx=document.getElementById('modalCanvas').getContext('2d'); if(modalChartInstance) modalChartInstance.destroy();
+    modalChartInstance = new Chart(mCtx, getChartConfig());
+  } drawChart(30);
 </script>
 </body>
 </html>
