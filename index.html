@@ -28,10 +28,16 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
 .checkbox-group label:has(input:checked) .tag-info{color:#17a2b8}
 .checkbox-group label:has(input:checked#tagHoliday){border-color:#17a2b8;background:#f0f9fa}
 .checkbox-group input{display:none}.hidden{display:none !important}
-.mood-group{display:flex;gap:10px;margin-bottom:15px}
-.mood-group label{flex:1;text-align:center;background:#f0f4f8;padding:15px 5px;border-radius:16px;cursor:pointer;border:2px solid transparent;transition:0.2s;font-size:15px}
-.mood-group label:has(input:checked){background:#fff8e1;border-color:#ffc107;font-weight:bold;transform:scale(1.02);box-shadow:0 4px 8px rgba(255,193,7,0.2)}
+
+/* 4段階の気分ボタン */
+.mood-group{display:flex;gap:8px;margin-bottom:15px}
+.mood-group label{flex:1;text-align:center;background:#f0f4f8;padding:12px 0;border-radius:14px;cursor:pointer;border:2px solid transparent;transition:0.2s;font-size:18px;font-weight:bold;color:#666}
 .mood-group input{display:none}
+.mood-group label:has(input[value="great"]:checked){background:#fff8e1;border-color:#ffb300;color:#d97706}
+.mood-group label:has(input[value="good"]:checked){background:#f0fdf4;border-color:#22c55e;color:#16a34a}
+.mood-group label:has(input[value="soso"]:checked){background:#f0f9ff;border-color:#0ea5e9;color:#0284c7}
+.mood-group label:has(input[value="bad"]:checked){background:#fef2f2;border-color:#ef4444;color:#dc2626}
+
 .snack-item{background:#f8f9fa;padding:16px;border-radius:16px;margin-bottom:12px;border:1px solid #e1e5e8;}
 .btn-remove-snack{background:#ffe5e5;color:#dc3545;border:none;border-radius:10px;font-weight:bold;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;font-size:16px;}
 .btn-add-snack{background:transparent;color:#4facfe;border:2px dashed #4facfe;padding:14px;border-radius:12px;cursor:pointer;width:100%;font-weight:bold;margin-bottom:10px;font-size:15px;}
@@ -43,30 +49,31 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
 #historyContainer{max-height:450px;overflow-y:auto;font-size:14px;padding-right:5px}
 #summaryContainer{background:#fff;padding:16px;border-radius:16px;margin-bottom:20px;color:#333;border:2px solid #e8f0f6;line-height:1.6}
 #feedbackBanner{background:#e8f4fd;color:#0056b3;padding:16px;border-radius:16px;margin-bottom:20px;font-weight:bold;text-align:center;line-height:1.5;box-shadow:0 4px 8px rgba(0,86,179,0.05);border:1px solid #cce5ff}
+
+/* 収支バッジ：マイナスが良（緑）、プラスが余剰（赤） */
 .bal-box{display:inline-block;padding:4px 10px;border-radius:8px;font-size:13px;margin-top:4px;font-weight:bold}
-.bal-plus{background:#e6f4ea;color:#137333;}
-.bal-minus{background:#fce8e6;color:#c5221f;}
+.bal-good{background:#e6f4ea;color:#137333;}
+.bal-over{background:#fce8e6;color:#c5221f;}
+
 .prog-bg{background:#e1e5e8;border-radius:10px;height:14px;width:100%;margin:8px 0;overflow:hidden;}
 .prog-bar{background:linear-gradient(90deg, #4facfe, #00f2fe);height:100%;transition:width 0.4s ease-out;}
 #streakBadge{font-size:13px;background:linear-gradient(135deg, #f6d365 0%, #fda085 100%);color:#fff;padding:6px 12px;border-radius:20px;font-weight:bold;box-shadow:0 2px 6px rgba(253,160,133,0.3);cursor:pointer;}
 #chartModal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.85);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:15px;box-sizing:border-box}
 .modal-content{background:#fff;width:100%;border-radius:20px;padding:24px;box-sizing:border-box;position:relative}
 .close-btn{position:absolute;top:10px;right:20px;font-size:28px;cursor:pointer;font-weight:bold;color:#999}
-.btn-force-reload{background:#dc3545;color:#fff;border:none;padding:12px;border-radius:12px;width:100%;font-weight:bold;margin-bottom:20px;cursor:pointer;box-shadow:0 4px 8px rgba(220,53,69,0.2);}
 </style></head>
 <body>
 <div class="card">
-  <button class="btn-force-reload" onclick="window.location.href = window.location.href.split('?')[0] + '?v=' + new Date().getTime();">最新版に強制更新</button>
-
   <h2>記録・修正 <span id="streakBadge">記録なし</span></h2>
   <div id="feedbackBanner" class="hidden"></div>
   <label>日付</label><input type="date" id="dateInput">
   <label>体重 (kg)</label><input type="number" step="0.1" id="weightInput" placeholder="例: 65.5">
-  <label>今日の気分</label>
+  <label>今日の調子</label>
   <div class="mood-group">
-    <label><input type="radio" name="mood" value="good"><span>最高！</span></label>
-    <label><input type="radio" name="mood" value="soso"><span>まあまあ</span></label>
-    <label><input type="radio" name="mood" value="bad"><span>耐えた…</span></label>
+    <label><input type="radio" name="mood" value="great"><span>◎</span></label>
+    <label><input type="radio" name="mood" value="good"><span>○</span></label>
+    <label><input type="radio" name="mood" value="soso"><span>△</span></label>
+    <label><input type="radio" name="mood" value="bad"><span>✕</span></label>
   </div>
   <label>運動</label>
   <div class="checkbox-group">
@@ -133,7 +140,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
   var GOAL_KM = 100;
   var $ = function(id) { return document.getElementById(id); };
   var lm = {'bento':'弁当','onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
-  var md = {'good':'最高！','soso':'まあまあ','bad':'耐えた…'};
+  var md = {'great':'◎','good':'○','soso':'△','bad':'✕'};
   
   function getL(t, c, m) {
     if (!t) return '';
@@ -221,23 +228,25 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
     if (Array.isArray(r.snacks)) {
       r.snacks.forEach(function(s) { eat += (parseInt(s.cal) || 0); });
     }
-    var bal = burn - eat;
+    
+    // 間食 - 消費（マイナスがカロリー削減成功）
+    var net = eat - burn;
     var hasNoise = r.lunchOut || r.dinnerOut || r.alcohol || r.salty || r.noBM;
 
     var msg1 = "";
-    if (r.run && bal >= 0 && !hasNoise) {
-      msg1 = "完璧なコントロールです！素晴らしいコンディション管理ですね。";
-    } else if (bal < 0) {
+    if (r.run && net <= 0 && !hasNoise) {
+      msg1 = "完璧なコントロールです！運動消費がしっかり上回っています。";
+    } else if (net > 0) {
       msg1 = "間食の記録がしっかりできています。正直な記録が一番の武器です。";
     } else if (hasNoise) {
       msg1 = "ノイズ要因もしっかり記録できています。水分変動ですので問題ありません。";
     } else if (r.run) {
-      msg1 = "しっかり走れていますね！着実に積み上がっています。";
+      msg1 = "しっかり走れていますね！着実に脂肪を削れています。";
     }
 
     var msg2 = "";
-    if (r.mood === 'good') msg2 = "良い気分で終えられたのが何よりの収穫です！";
-    else if (r.mood === 'bad') msg2 = "大変な日も記録を続けられていることが素晴らしいです。";
+    if (r.mood === 'great' || r.mood === 'good') msg2 = "好調を維持できていて素晴らしいです！";
+    else if (r.mood === 'bad') msg2 = "大変な日も記録を続けられていることが大きな前進です。";
     else msg2 = "今日もお疲れ様でした！コツコツ継続していきましょう。";
     
     b.innerHTML = msg1 ? (msg1 + '<br>' + msg2) : msg2;
@@ -416,14 +425,17 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
     });
     
     var progPct = Math.min(100, (mRun / GOAL_KM) * 100);
-    var mBal = mBurn - mEat;
-    var mFat = Math.round(mBal / 7.2);
-    var fatHtml = mBal >= 0 ? '<span style="color:#28a745">' + mFat + 'gの脂肪燃焼相当</span>' : '<span style="color:#dc3545">' + Math.abs(mFat) + 'gの脂肪蓄積相当</span>';
+    // 月間収支：間食 - 消費（マイナスが削減成功）
+    var mNet = mEat - mBurn;
+    var mFat = Math.round(Math.abs(mNet) / 7.2);
+    var fatHtml = mNet <= 0 ? 
+      '<span style="color:#28a745">約' + mFat + 'gの脂肪燃焼ペース</span>' : 
+      '<span style="color:#dc3545">約' + mFat + 'gの脂肪余剰ペース</span>';
     
     $('summaryContainer').innerHTML = '<div style="text-align:left;">' +
       '<div style="font-size:13px;color:#666;font-weight:bold;margin-bottom:4px;">月間走行距離: ' + mRun.toFixed(1) + ' / ' + GOAL_KM + 'km</div>' +
       '<div class="prog-bg"><div class="prog-bar" style="width:' + progPct + '%"></div></div>' +
-      '<div style="font-size:13px;color:#666;font-weight:bold;margin-top:10px;">今月のカロリー貯金: ' + (mBal > 0 ? '+' : '') + mBal + 'kcal</div>' +
+      '<div style="font-size:13px;color:#666;font-weight:bold;margin-top:10px;">今月の正味カロリー: ' + (mNet > 0 ? '+' : '') + mNet + 'kcal</div>' +
       '<div style="font-size:15px;margin-top:2px;">' + fatHtml + '</div></div>';
     
     var html = '';
@@ -441,9 +453,13 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
         r.snacks.forEach(function(s) { eat += (parseInt(s.cal) || 0); });
       }
       
-      var bal = burn - eat;
-      var balHtml = bal >= 0 ? '<div class="bal-box bal-plus">消費' + burn + ' - 間食' + eat + ' = +' + bal + 'kcal</div>' : '<div class="bal-box bal-minus">消費' + burn + ' - 間食' + eat + ' = ' + bal + 'kcal</div>';
-      var isPerfect = r.run && (bal >= 0) && !r.lunchOut && !r.dinnerOut && !r.alcohol && !r.salty;
+      // 日次収支：間食 - 消費
+      var net = eat - burn;
+      var balHtml = net <= 0 ? 
+        '<div class="bal-box bal-good">間食' + eat + ' - 消費' + burn + ' = ' + net + 'kcal</div>' : 
+        '<div class="bal-box bal-over">間食' + eat + ' - 消費' + burn + ' = +' + net + 'kcal</div>';
+
+      var isPerfect = r.run && (net <= 0) && !r.lunchOut && !r.dinnerOut && !r.alcohol && !r.salty;
       var perfHtml = isPerfect ? '<span style="background:linear-gradient(45deg, #ffd700, #ffa500);color:#fff;font-size:11px;padding:2px 8px;border-radius:12px;margin-left:8px;font-weight:bold;">PERFECT</span>' : '';
 
       var ex = [];
@@ -469,7 +485,9 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       if (r.noBM) tgs.push("便通なし");
       if (r.workStress) tgs.push("残業/ストレス");
       if (r.musclePain) tgs.push("筋肉痛/疲労");
-      var moodTxt = r.mood ? '<span style="margin-right:8px;font-size:16px;">' + (md[r.mood] || '') + '</span>' : '';
+      
+      var moodLabel = md[r.mood] || r.mood || '';
+      var moodTxt = moodLabel ? '<span style="display:inline-block;width:24px;text-align:center;font-weight:bold;margin-right:6px;color:#0284c7;">' + moodLabel + '</span>' : '';
 
       html += '<div style="border-bottom:1px solid #f0f2f5;padding:16px 0;">' +
         '<div style="display:flex;align-items:center;margin-bottom:6px;">' + moodTxt + '<span style="font-weight:bold;color:#4facfe;font-size:16px;">' + d + ' : ' + r.weight + 'kg</span>' + perfHtml + '</div>' +
@@ -483,7 +501,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
     var raw = getSafeData();
     var dates = Object.keys(raw).sort();
     if (!dates.length) return null;
-    var csv = "日付(曜日),平日/休日,気分,体重,運動,運動消費(kcal),昼食,間食,間食摂取(kcal),収支(kcal),外食飲酒等,体調・疲労,メモ\n";
+    var csv = "日付(曜日),平日/休日,調子,体重,運動,運動消費(kcal),昼食,間食,間食摂取(kcal),差分(間食-消費kcal),外食飲酒等,体調・疲労,メモ\n";
     var tm = { 'morning': '朝', 'noon': '昼', 'evening': '夕方', 'before_dinner': '夕食前', 'after_dinner': '夕食後' };
     var dw = ['日', '月', '火', '水', '木', '金', '土'];
     dates.forEach(function(d) {
@@ -522,7 +540,8 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
       if (r.workStress) cond.push("残業/ストレス");
       if (r.musclePain) cond.push("筋肉痛/疲労");
       
-      csv += d + '(' + dayStr + '),' + (r.holiday ? '休日' : '平日') + ',' + (md[r.mood] || '') + ',' + r.weight + ',' + (ex.length ? ex.join('+') : '休') + ',' + burn + ',' + lTxt + ',' + sTxt + ',' + eat + ',' + (burn - eat) + ',' + (tgs.length ? tgs.join('・') : '無') + ',' + (cond.length ? cond.join('・') : '通常') + ',' + (r.memo || '') + '\n';
+      var moodLabel = md[r.mood] || r.mood || '';
+      csv += d + '(' + dayStr + '),' + (r.holiday ? '休日' : '平日') + ',' + moodLabel + ',' + r.weight + ',' + (ex.length ? ex.join('+') : '休') + ',' + burn + ',' + lTxt + ',' + sTxt + ',' + eat + ',' + (eat - burn) + ',' + (tgs.length ? tgs.join('・') : '無') + ',' + (cond.length ? cond.join('・') : '通常') + ',' + (r.memo || '') + '\n';
     });
     return csv;
   }
@@ -617,7 +636,7 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
                       dtls.push('間食' + (idx + 1) + ': ' + (tm[s.time] || '') + ' ' + s.content + ' (' + s.cal + 'kcal)');
                     });
                   }
-                  if (rd.mood) dtls.push('気分: ' + (md[rd.mood] || ''));
+                  if (rd.mood) dtls.push('調子: ' + (md[rd.mood] || rd.mood || ''));
                   if (rd.memo) dtls.push('メモ: ' + rd.memo);
                   return dtls;
                 }
@@ -637,7 +656,6 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
     modalChartInstance = new Chart(mCtx, getChartConfig());
   }
 
-  // 初期実行
   $('dateInput').value = fmtDate(new Date());
   loadDataForDate();
   updateHistoryList();
