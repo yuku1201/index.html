@@ -41,14 +41,20 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
 .snack-item{background:#f8f9fa;padding:16px;border-radius:16px;margin-bottom:12px;border:1px solid #e1e5e8;}
 .btn-remove-snack{background:#ffe5e5;color:#dc3545;border:none;border-radius:10px;font-weight:bold;cursor:pointer;padding:0;display:flex;align-items:center;justify-content:center;font-size:16px;}
 .btn-add-snack{background:transparent;color:#4facfe;border:2px dashed #4facfe;padding:14px;border-radius:12px;cursor:pointer;width:100%;font-weight:bold;margin-bottom:10px;font-size:15px;}
-.btn-save{background:linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);color:#fff;border:none;padding:16px;width:100%;border-radius:16px;font-size:18px;font-weight:bold;margin-top:15px;cursor:pointer;box-shadow:0 6px 12px rgba(79,172,254,0.3);transition:0.2s}
-.btn-save:active{transform:translateY(2px);box-shadow:0 2px 6px rgba(79,172,254,0.3)}
+
+/* ボタングループ */
+.btn-save-sub{background:#e2e8f0;color:#334155;border:none;padding:14px;width:100%;border-radius:14px;font-size:15px;font-weight:bold;margin-top:15px;cursor:pointer;transition:0.2s}
+.btn-save-sub:active{background:#cbd5e1}
+.btn-save-main{background:linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);color:#fff;border:none;padding:16px;width:100%;border-radius:16px;font-size:17px;font-weight:bold;margin-top:10px;cursor:pointer;box-shadow:0 6px 12px rgba(79,172,254,0.3);transition:0.2s}
+.btn-save-main:active{transform:translateY(2px);box-shadow:0 2px 6px rgba(79,172,254,0.3)}
+#quickSaveToast{font-size:13px;color:#16a34a;font-weight:bold;text-align:center;margin-top:8px;min-height:18px;}
+
 .btn-export{background:#495057;color:#fff;border:none;padding:12px;border-radius:12px;font-size:14px;font-weight:bold;cursor:pointer;}
 .btn-zoom{background:#f0f4f8;color:#555;border:none;padding:10px;border-radius:12px;font-size:14px;cursor:pointer;width:100%;margin-top:10px;font-weight:bold}
 .btn-group{display:flex;gap:8px;margin-bottom:15px}.btn-group button{flex:1;background:#f0f4f8;border:none;padding:12px;border-radius:12px;font-size:14px;color:#555;font-weight:bold}.btn-group button.active{background:#4facfe;color:#fff}
 #historyContainer{max-height:450px;overflow-y:auto;font-size:14px;padding-right:5px}
 #summaryContainer{background:#fff;padding:16px;border-radius:16px;margin-bottom:20px;color:#333;border:2px solid #e8f0f6;line-height:1.6}
-#feedbackBanner{background:#e8f4fd;color:#0056b3;padding:16px;border-radius:16px;margin-bottom:20px;font-weight:bold;text-align:center;line-height:1.5;box-shadow:0 4px 8px rgba(0,86,179,0.05);border:1px solid #cce5ff}
+#feedbackBanner{background:#e8f4fd;color:#0056b3;padding:16px;border-radius:16px;margin-bottom:20px;font-weight:bold;text-align:left;line-height:1.6;box-shadow:0 4px 8px rgba(0,86,179,0.05);border:1px solid #cce5ff}
 
 /* 収支バッジ：マイナスが良（緑）、プラスが余剰（赤） */
 .bal-box{display:inline-block;padding:4px 10px;border-radius:8px;font-size:13px;margin-top:4px;font-weight:bold}
@@ -109,7 +115,10 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
     <label><input type="checkbox" id="tagMusclePain"><span class="tag-warn">筋肉痛/疲労</span></label>
   </div>
   <label>メモ(任意)</label><input type="text" id="memoInput" placeholder="例: 食べすぎた等">
-  <button class="btn-save" onclick="saveData()">記録を保存して分析する</button>
+  
+  <button type="button" class="btn-save-sub" onclick="saveData(false)">記録を更新 (都度保存)</button>
+  <div id="quickSaveToast"></div>
+  <button type="button" class="btn-save-main" onclick="saveData(true)">本日の記録を完了して総合分析</button>
 </div>
 
 <div class="card">
@@ -216,42 +225,6 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
     $('snackContainer').appendChild(div);
   }
 
-  function showFeedback(r) {
-    var b = $('feedbackBanner');
-    b.classList.remove('hidden');
-    var burn = 0;
-    if (r.run && r.runKm) burn += Math.round(r.weight * r.runKm);
-    if (r.muscleUpper || r.muscle) burn += 100;
-    if (r.muscleLower) burn += 100;
-    if (r.stretch) burn += 30;
-    var eat = 0;
-    if (Array.isArray(r.snacks)) {
-      r.snacks.forEach(function(s) { eat += (parseInt(s.cal) || 0); });
-    }
-    
-    // 間食 - 消費（マイナスがカロリー削減成功）
-    var net = eat - burn;
-    var hasNoise = r.lunchOut || r.dinnerOut || r.alcohol || r.salty || r.noBM;
-
-    var msg1 = "";
-    if (r.run && net <= 0 && !hasNoise) {
-      msg1 = "完璧なコントロールです！運動消費がしっかり上回っています。";
-    } else if (net > 0) {
-      msg1 = "間食の記録がしっかりできています。正直な記録が一番の武器です。";
-    } else if (hasNoise) {
-      msg1 = "ノイズ要因もしっかり記録できています。水分変動ですので問題ありません。";
-    } else if (r.run) {
-      msg1 = "しっかり走れていますね！着実に脂肪を削れています。";
-    }
-
-    var msg2 = "";
-    if (r.mood === 'great' || r.mood === 'good') msg2 = "好調を維持できていて素晴らしいです！";
-    else if (r.mood === 'bad') msg2 = "大変な日も記録を続けられていることが大きな前進です。";
-    else msg2 = "今日もお疲れ様でした！コツコツ継続していきましょう。";
-    
-    b.innerHTML = msg1 ? (msg1 + '<br>' + msg2) : msg2;
-  }
-
   function getSafeData() {
     try {
       var v = localStorage.getItem('myHealthData');
@@ -271,6 +244,104 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
     } catch(e) {
       return {};
     }
+  }
+
+  function showMultiFeedback(currentDate, r) {
+    var b = $('feedbackBanner');
+    b.classList.remove('hidden');
+
+    var burn = 0;
+    if (r.run && r.runKm) burn += Math.round(r.weight * r.runKm);
+    if (r.muscleUpper || r.muscle) burn += 100;
+    if (r.muscleLower) burn += 100;
+    if (r.stretch) burn += 30;
+
+    var eat = 0;
+    var hasLateSnack = false;
+    var snackCount = 0;
+    if (Array.isArray(r.snacks)) {
+      r.snacks.forEach(function(s) {
+        var c = parseInt(s.cal) || 0;
+        eat += c;
+        if (s.time === 'after_dinner') hasLateSnack = true;
+        if (c > 0 || (s.content && s.content.trim())) snackCount++;
+      });
+    }
+
+    var net = eat - burn;
+    var hasNoise = r.lunchOut || r.dinnerOut || r.alcohol || r.salty || r.noBM;
+
+    // 前日比の計算
+    var raw = getSafeData();
+    var cParts = currentDate.split('-');
+    var prevDiff = null;
+    if (cParts.length === 3) {
+      var cObj = new Date(parseInt(cParts[0],10), parseInt(cParts[1],10)-1, parseInt(cParts[2],10));
+      cObj.setDate(cObj.getDate() - 1);
+      var prevDateStr = fmtDate(cObj);
+      if (raw[prevDateStr] && raw[prevDateStr].weight && r.weight) {
+        prevDiff = Math.round((r.weight - raw[prevDateStr].weight) * 10) / 10;
+      }
+    }
+
+    // 月間進捗ペース
+    var today = new Date();
+    var curDay = today.getDate();
+    var totalDays = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
+    var mRun = 0;
+    Object.keys(raw).forEach(function(d) {
+      var dParts = d.split('-');
+      if (dParts.length === 3 && (parseInt(dParts[1],10) - 1) === today.getMonth()) {
+        if (raw[d].run) mRun += (raw[d].runKm || 0);
+      }
+    });
+    var expectedKm = (GOAL_KM / totalDays) * curDay;
+    var paceAhead = mRun >= expectedKm;
+
+    // レイヤー1：運動収支・行動実績
+    var l1 = "";
+    if (r.run && net <= -200 && !hasNoise) {
+      l1 = "完璧な立ち回りです。無駄なノイズを遮断し、純粋に脂肪燃焼へ直結させた見事な1日でした。";
+    } else if (r.run && net <= 0) {
+      l1 = "しっかり走って消費を先行させました。日々の確実な積み重ねが身体を絞り込みます。";
+    } else if (!r.run && (r.muscleUpper || r.muscleLower || r.stretch)) {
+      l1 = "ランオフでも補強トレで代謝ベースを維持できています。地道な補強が走りの粘りを生みます。";
+    } else if (net > 200) {
+      l1 = "本日は間食が運動消費を明確に上回りました。明日の食事配分ですぐに手当を入れましょう。";
+    } else if (hasNoise) {
+      l1 = "複数のノイズが重なりました。明朝の数値が上振れても慌てず、平常運転で水分を抜きましょう。";
+    } else {
+      l1 = "1日の記録が完了しました。現状を正確に把握できていること自体が次への前進です。";
+    }
+
+    // レイヤー2：間食の質・前日比
+    var l2 = "";
+    if (hasLateSnack) {
+      l2 = "夕食以降の間食を検知しました。就寝中の内臓負担を抑え、脂肪代謝を促すためにも夜は引き締めたい局面です。";
+    } else if (snackCount > 0 && eat <= 150) {
+      l2 = "間食を低カロリー・コンパクトに制御できています。食べる量を理性でコントロールできています。";
+    } else if (prevDiff !== null && prevDiff >= 0.4) {
+      l2 = "前日から+0.4kg以上の増加です。ノイズによる水分滞留か、実質的な過剰かを見極めて冷静に対処しましょう。";
+    } else if (prevDiff !== null && prevDiff <= -0.3) {
+      l2 = "前日比でしっかり絞れています。日頃の節制とトレーニングの成果が着実に現れています。";
+    }
+
+    // レイヤー3：月間目標ペース・調子
+    var l3 = "";
+    if (r.mood === 'bad') {
+      l3 = "しんどい状況でも記録を途絶えさせなかったことが最大の収穫です。今夜は休養を最優先に。";
+    } else if (r.mood === 'great') {
+      l3 = "調子の良さが行動に直結しています。この良い感覚とリズムを身体に記憶させておきましょう。";
+    } else if (paceAhead) {
+      l3 = "月間100kmに対してペース先行をキープ中。疲労を抜きつつ確固たる土台を固めていきましょう。";
+    } else {
+      l3 = "月間目標に対して走行距離がやや不足気味です。次のポイント練習でまとまった距離を稼ぎたいところです。";
+    }
+
+    var lines = [l1];
+    if (l2) lines.push(l2);
+    if (l3) lines.push(l3);
+    b.innerHTML = lines.join('<br>');
   }
 
   function loadDataForDate() {
@@ -330,11 +401,12 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
     $('memoInput').value = rd.memo || '';
     $('exRun').dispatchEvent(new Event('change'));
     $('feedbackBanner').classList.add('hidden');
+    $('quickSaveToast').innerText = '';
   }
   
   $('dateInput').addEventListener('change', loadDataForDate);
 
-  function saveData() {
+  function saveData(isFinalAnalyze) {
     var d = $('dateInput').value;
     var w = $('weightInput').value;
     if (!d || !w) return alert('日付と体重は必須です');
@@ -375,10 +447,24 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
     };
     data[d] = Object.assign(data[d] || {}, newData);
     localStorage.setItem('myHealthData', JSON.stringify(data));
-    showFeedback(newData);
+    
     drawChart(30);
     updateHistoryList();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+
+    if (isFinalAnalyze) {
+      showMultiFeedback(d, newData);
+      $('quickSaveToast').innerText = '';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } else {
+      $('feedbackBanner').classList.add('hidden');
+      var now = new Date();
+      var timeStr = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+      var toast = $('quickSaveToast');
+      toast.innerText = '保存完了 (' + timeStr + ')';
+      setTimeout(function() {
+        if (toast.innerText.indexOf('保存完了') !== -1) toast.innerText = '';
+      }, 3500);
+    }
   }
 
   function updateHistoryList() {
@@ -425,7 +511,6 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
     });
     
     var progPct = Math.min(100, (mRun / GOAL_KM) * 100);
-    // 月間収支：間食 - 消費（マイナスが削減成功）
     var mNet = mEat - mBurn;
     var mFat = Math.round(Math.abs(mNet) / 7.2);
     var fatHtml = mNet <= 0 ? 
@@ -453,7 +538,6 @@ input:focus,select:focus{border-color:#4facfe;outline:none;background:#fff}
         r.snacks.forEach(function(s) { eat += (parseInt(s.cal) || 0); });
       }
       
-      // 日次収支：間食 - 消費
       var net = eat - burn;
       var balHtml = net <= 0 ? 
         '<div class="bal-box bal-good">間食' + eat + ' - 消費' + burn + ' = ' + net + 'kcal</div>' : 
