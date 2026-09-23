@@ -17,7 +17,6 @@
   --border: rgba(55, 53, 47, 0.12);
   --border-light: rgba(55, 53, 47, 0.06);
   --primary: #2383e2;
-  --primary-bg: #edf5fc;
   --tag-green-bg: #edf7ed; --tag-green-text: #2e7d32;
   --tag-red-bg: #fdeeee; --tag-red-text: #c62828;
   --tag-blue-bg: #e8f4fd; --tag-blue-text: #0288d1;
@@ -27,63 +26,85 @@
 body {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
   margin: 0;
-  padding: 16px;
+  padding: 12px 12px 60px;
   background: var(--bg);
   color: var(--text-main);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
-/* Notion風 KPIヘッダーサマリー */
+/* Notion風 KPIヘッダー */
 .kpi-container {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 6px;
+  margin-bottom: 12px;
 }
 .kpi-card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px 8px;
+  border-radius: 6px;
+  padding: 8px 4px;
   text-align: center;
 }
-.kpi-label { font-size: 11px; color: var(--text-sub); margin-bottom: 4px; font-weight: 500; }
-.kpi-val { font-size: 14px; font-weight: 700; color: var(--text-main); }
+.kpi-label { font-size: 10px; color: var(--text-sub); margin-bottom: 2px; font-weight: 500; }
+.kpi-val { font-size: 13px; font-weight: 700; color: var(--text-main); }
 
-/* タブナビゲーション */
+/* タブバー（固定風） */
 .tab-bar {
   display: flex;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 16px;
-  gap: 8px;
+  margin-bottom: 12px;
+  gap: 4px;
 }
 .tab-btn {
+  flex: 1;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
-  padding: 8px 12px;
-  font-size: 14px;
+  padding: 8px 0;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-sub);
   cursor: pointer;
+  text-align: center;
 }
 .tab-btn.active {
   color: var(--text-main);
   border-bottom: 2px solid var(--text-main);
 }
 
+/* スワイプコンテナ構造 */
+.swipe-container {
+  display: flex;
+  width: 100vw;
+  margin-left: -12px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+.swipe-container::-webkit-scrollbar { display: none; }
+.swipe-page {
+  flex: 0 0 100vw;
+  width: 100vw;
+  box-sizing: border-box;
+  padding: 0 12px;
+  scroll-snap-align: start;
+}
+
 /* カード共通 */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 16px;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
 }
 h2 {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
-  margin: 0 0 16px 0;
+  margin: 0 0 12px 0;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -91,39 +112,39 @@ h2 {
 }
 label {
   display: block;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
   color: var(--text-sub);
-  margin: 14px 0 6px;
+  margin: 12px 0 4px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
 /* フォームコントロール */
-input[type="number"], input[type="text"], input[type="date"], select {
+input[type="number"], input[type="text"], input[type="date"], select, textarea {
   width: 100%;
-  padding: 10px 12px;
+  padding: 9px 10px;
   box-sizing: border-box;
   border: 1px solid var(--border);
   border-radius: 6px;
   font-size: 14px;
   background: #fff;
   color: var(--text-main);
+  font-family: inherit;
 }
-input:focus, select:focus {
+input:focus, select:focus, textarea:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px rgba(35, 131, 226, 0.15);
 }
-.row { display: flex; gap: 8px; margin-bottom: 8px; }
+.row { display: flex; gap: 6px; margin-bottom: 6px; }
 .row > * { flex: 1; }
 
 /* 4段階調子バッジ */
-.mood-group { display: flex; gap: 6px; margin-bottom: 12px; }
+.mood-group { display: flex; gap: 6px; margin-bottom: 10px; }
 .mood-group label {
   flex: 1; text-align: center; background: var(--tag-gray-bg); padding: 8px 0;
   border-radius: 6px; cursor: pointer; border: 1px solid transparent;
-  font-size: 15px; font-weight: bold; color: var(--tag-gray-text); margin: 0;
+  font-size: 15px; font-weight: 800; color: var(--tag-gray-text); margin: 0;
 }
 .mood-group input { display: none; }
 .mood-group label:has(input[value="great"]:checked) { background: #fff8e1; border-color: #ffd54f; color: #b78103; }
@@ -132,17 +153,16 @@ input:focus, select:focus {
 .mood-group label:has(input[value="bad"]:checked) { background: var(--tag-red-bg); border-color: #ef9a9a; color: var(--tag-red-text); }
 
 /* チェックボックスタグ */
-.checkbox-group { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+.checkbox-group { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
 .checkbox-group label {
   display: inline-flex; align-items: center; justify-content: center;
-  background: var(--tag-gray-bg); padding: 6px 12px; border-radius: 6px;
+  background: var(--tag-gray-bg); padding: 6px 10px; border-radius: 6px;
   font-size: 12px; font-weight: 500; color: var(--text-main); margin: 0;
   cursor: pointer; border: 1px solid transparent;
 }
 .checkbox-group input { display: none; }
 .checkbox-group.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
 
-/* Notion風パステルカラーのアクティブ状態 */
 .checkbox-group label:has(input:checked:is(#exRun,#exMuscleUpper,#exMuscleLower,#exStretch)) {
   background: var(--tag-green-bg); color: var(--tag-green-text); border-color: #c8e6c9; font-weight: 600;
 }
@@ -159,7 +179,7 @@ input:focus, select:focus {
 /* 間食入力 */
 .snack-item {
   background: #fafafa; border: 1px solid var(--border-light);
-  border-radius: 6px; padding: 10px; margin-bottom: 8px;
+  border-radius: 6px; padding: 8px; margin-bottom: 6px;
 }
 .btn-remove-snack {
   background: transparent; color: #e53935; border: 1px solid #ffcdd2;
@@ -167,36 +187,46 @@ input:focus, select:focus {
 }
 .btn-add-snack {
   background: transparent; color: var(--text-sub); border: 1px dashed var(--border);
-  padding: 10px; border-radius: 6px; cursor: pointer; width: 100%;
-  font-size: 13px; font-weight: 500; margin-bottom: 8px;
+  padding: 8px; border-radius: 6px; cursor: pointer; width: 100%;
+  font-size: 12px; font-weight: 500; margin-bottom: 6px;
 }
 
-/* アクションボタン */
+/* ボタン */
 .btn-save-sub {
   background: var(--tag-gray-bg); color: var(--text-main); border: 1px solid var(--border);
-  padding: 12px; width: 100%; border-radius: 6px; font-size: 13px; font-weight: 600;
-  margin-top: 14px; cursor: pointer;
+  padding: 10px; width: 100%; border-radius: 6px; font-size: 13px; font-weight: 600;
+  margin-top: 12px; cursor: pointer;
 }
 .btn-save-main {
-  background: #2f343b; color: #fff; border: none; padding: 14px; width: 100%;
-  border-radius: 6px; font-size: 14px; font-weight: 600; margin-top: 8px;
-  cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  background: #2f343b; color: #fff; border: none; padding: 12px; width: 100%;
+  border-radius: 6px; font-size: 13px; font-weight: 600; margin-top: 6px;
+  cursor: pointer;
 }
-#quickSaveToast { font-size: 12px; color: #2e7d32; text-align: center; margin-top: 6px; min-height: 16px; font-weight: 500; }
+#quickSaveToast { font-size: 11px; color: #2e7d32; text-align: center; margin-top: 4px; min-height: 16px; font-weight: 500; }
 #feedbackBanner {
-  background: #fbfbf9; border-left: 3px solid var(--text-main); padding: 12px 14px;
-  margin-bottom: 16px; font-size: 13px; line-height: 1.6; color: var(--text-main);
+  background: #fbfbf9; border-left: 3px solid var(--text-main); padding: 10px 12px;
+  margin-bottom: 12px; font-size: 12px; line-height: 1.5; color: var(--text-main);
 }
 
-/* 週間レビュー表 */
-.notion-table {
-  width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px;
+/* 週間レビューカード */
+.week-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+  background: #fff;
 }
-.notion-table th, .notion-table td {
-  border: 1px solid var(--border); padding: 8px; text-align: right;
+.week-card-head {
+  display: flex; justify-content: space-between; align-items: center;
+  font-weight: 700; font-size: 13px; margin-bottom: 6px; border-bottom: 1px solid var(--border-light); padding-bottom: 4px;
 }
-.notion-table th { background: var(--tag-gray-bg); font-weight: 600; color: var(--text-sub); }
-.notion-table td:first-child, .notion-table th:first-child { text-align: left; }
+.week-card-metrics {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 11px; color: var(--text-sub);
+}
+.week-card-metrics span { display: block; font-size: 13px; font-weight: 700; color: var(--text-main); margin-top: 1px; }
+.week-card-judge {
+  margin-top: 6px; font-size: 11px; font-weight: 600; padding: 4px 6px; border-radius: 4px; background: var(--tag-gray-bg);
+}
 
 /* 収支バッジ */
 .bal-box { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
@@ -205,10 +235,10 @@ input:focus, select:focus {
 
 .prog-bg { background: var(--border-light); border-radius: 4px; height: 6px; width: 100%; margin: 6px 0; overflow: hidden; }
 .prog-bar { background: var(--primary); height: 100%; }
-.btn-group { display: flex; gap: 6px; margin: 12px 0; }
+.btn-group { display: flex; gap: 4px; margin: 8px 0; }
 .btn-group button {
   flex: 1; background: var(--tag-gray-bg); border: 1px solid var(--border);
-  padding: 8px; border-radius: 6px; font-size: 12px; color: var(--text-sub); cursor: pointer;
+  padding: 6px; border-radius: 4px; font-size: 11px; color: var(--text-sub); cursor: pointer;
 }
 .btn-group button.active { background: #2f343b; color: #fff; border-color: #2f343b; font-weight: 600; }
 
@@ -218,7 +248,7 @@ input:focus, select:focus {
   background: rgba(15, 15, 15, 0.6); z-index: 9999; display: flex;
   align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;
 }
-.modal-content { background: #fff; width: 100%; border-radius: 8px; padding: 20px; position: relative; }
+.modal-content { background: #fff; width: 100%; border-radius: 8px; padding: 16px; position: relative; }
 </style>
 </head>
 <body>
@@ -243,121 +273,130 @@ input:focus, select:focus {
   </div>
 </div>
 
-<!-- ビュー切り替えタブ -->
+<!-- タブバー -->
 <div class="tab-bar">
-  <button class="tab-btn active" onclick="switchTab('inputTab', this)">入力</button>
-  <button class="tab-btn" onclick="switchTab('analysisTab', this)">分析・推移</button>
-  <button class="tab-btn" onclick="switchTab('historyTab', this)">全履歴</button>
+  <button class="tab-btn active" id="tabBtn0" onclick="goToPage(0)">入力</button>
+  <button class="tab-btn" id="tabBtn1" onclick="goToPage(1)">分析・推移</button>
+  <button class="tab-btn" id="tabBtn2" onclick="goToPage(2)">全履歴</button>
 </div>
 
-<!-- タブ1: 記録・入力 -->
-<div id="inputTab" class="tab-content">
-  <div class="card">
-    <h2>記録・修正 <span id="streakBadge" style="font-size:12px;font-weight:normal;color:var(--text-sub);">5日目</span></h2>
-    <div id="feedbackBanner" class="hidden"></div>
-    <label>日付</label><input type="date" id="dateInput">
-    <label>体重 (kg)</label><input type="number" step="0.1" id="weightInput" placeholder="例: 64.8">
-    <label>今日の調子</label>
-    <div class="mood-group">
-      <label><input type="radio" name="mood" value="great"><span>◎</span></label>
-      <label><input type="radio" name="mood" value="good"><span>○</span></label>
-      <label><input type="radio" name="mood" value="soso"><span>△</span></label>
-      <label><input type="radio" name="mood" value="bad"><span>✕</span></label>
-    </div>
-    <label>運動</label>
-    <div class="checkbox-group">
-      <label><input type="checkbox" id="exRun" value="run"><span>ラン</span></label>
-      <label><input type="checkbox" id="exMuscleUpper" value="upper"><span>体幹/上半身</span></label>
-      <label><input type="checkbox" id="exMuscleLower" value="lower"><span>下半身</span></label>
-      <label><input type="checkbox" id="exStretch" value="stretch"><span>ストレッチ</span></label>
-      <label><input type="checkbox" id="exNone" value="none"><span>休養</span></label>
-    </div>
-    <div id="runDistWrapper" class="hidden"><label>距離 (km)</label><input type="number" step="0.1" id="runDistInput" placeholder="例: 10"></div>
-    <label>昼食</label>
-    <div class="row" style="margin-bottom:6px;">
-      <select id="lunchSelect"><option value="bento">弁当(持参)</option><option value="onigiri_low">おにぎり(低脂質)</option><option value="onigiri_high">おにぎり(高脂質)</option><option value="bread">パン</option><option value="other">その他</option></select>
-      <input type="number" id="lunchCount" min="0" placeholder="個数"><input type="text" id="lunchMemo" class="hidden" placeholder="内容">
-    </div>
-    <div class="row hidden" id="lunchRow2" style="margin-bottom:6px;">
-      <select id="lunchSelect2"><option value="">-- 追加なし --</option><option value="bento">弁当(持参)</option><option value="onigiri_low">おにぎり(低脂質)</option><option value="onigiri_high">おにぎり(高脂質)</option><option value="bread">パン</option><option value="other">その他</option></select>
-      <input type="number" id="lunchCount2" min="0" placeholder="個数"><input type="text" id="lunchMemo2" class="hidden" placeholder="内容">
-    </div>
-    <button type="button" id="btnAddLunch" class="btn-add-snack" style="padding:6px;font-size:12px;">＋ 昼食の組み合わせを追加</button>
-    <label>間食</label>
-    <div id="snackContainer"></div>
-    <button type="button" class="btn-add-snack" onclick="addSnackRow()">＋ 間食を追加</button>
-    <label>変動要因 (ノイズの記録)</label>
-    <div class="checkbox-group grid">
-      <label><input type="checkbox" id="tagHoliday"><span>休日(祝休・有休)</span></label>
-      <label><input type="checkbox" id="tagNoBM"><span>便通なし</span></label>
-      <label><input type="checkbox" id="tagLunchOut"><span>昼外食</span></label>
-      <label><input type="checkbox" id="tagDinnerOut"><span>夜外食</span></label>
-      <label><input type="checkbox" id="tagAlcohol"><span>飲酒</span></label>
-      <label><input type="checkbox" id="tagSalty"><span>塩分多め</span></label>
-      <label><input type="checkbox" id="tagWorkStress"><span>残業/ストレス</span></label>
-      <label><input type="checkbox" id="tagMusclePain"><span>筋肉痛/疲労</span></label>
-    </div>
-    <label>メモ(任意)</label><input type="text" id="memoInput" placeholder="気づき・反省点など">
-    <button type="button" class="btn-save-sub" onclick="saveData(false)">記録を更新 (都度保存)</button>
-    <div id="quickSaveToast"></div>
-    <button type="button" class="btn-save-main" onclick="saveData(true)">本日の記録を完了して総合分析</button>
-  </div>
-</div>
+<!-- 横スワイプ対応コンテナ -->
+<div class="swipe-container" id="swipeContainer">
+  
+  <!-- ページ0: 入力 -->
+  <div class="swipe-page" id="page0">
+    <div class="card">
+      <h2>記録・修正 <span id="streakBadge" style="font-size:11px;font-weight:normal;color:var(--text-sub);">8日連続記録中</span></h2>
+      <div id="feedbackBanner" class="hidden"></div>
+      
+      <label>日付</label><input type="date" id="dateInput">
+      <label>体重 (kg)</label><input type="number" step="0.1" id="weightInput" placeholder="例: 64.7">
+      
+      <label>今日の調子</label>
+      <div class="mood-group">
+        <label><input type="radio" name="mood" value="great"><span>◎</span></label>
+        <label><input type="radio" name="mood" value="good"><span>○</span></label>
+        <label><input type="radio" name="mood" value="soso"><span>△</span></label>
+        <label><input type="radio" name="mood" value="bad"><span>✕</span></label>
+      </div>
 
-<!-- タブ2: 分析・推移 -->
-<div id="analysisTab" class="tab-content hidden">
-  <div class="card">
-    <h2>体重トレンド (目標: 60kg未満)</h2>
-    <canvas id="weightChart"></canvas>
-    <button type="button" class="btn-save-sub" style="margin-top:10px;padding:8px;" onclick="document.getElementById('chartModal').classList.remove('hidden')">グラフ拡大</button>
-    <div class="btn-group">
-      <button id="btn1w" onclick="drawChart(7)">1週間</button>
-      <button id="btn1m" onclick="drawChart(30)">1ヶ月</button>
-      <button id="btn6m" onclick="drawChart(180)">半年</button>
-    </div>
-    <div class="row" style="margin-top:12px;">
-      <button type="button" class="btn-save-sub" style="margin:0;" onclick="copyForAI()">データコピー</button>
-      <button type="button" class="btn-save-sub" style="margin:0;background:#2e7d32;color:#fff;border-color:#2e7d32;" onclick="downloadCSV()">CSV保存</button>
+      <label>運動</label>
+      <div class="checkbox-group">
+        <label><input type="checkbox" id="exRun" value="run"><span>ラン</span></label>
+        <label><input type="checkbox" id="exMuscleUpper" value="upper"><span>体幹/上半身</span></label>
+        <label><input type="checkbox" id="exMuscleLower" value="lower"><span>下半身</span></label>
+        <label><input type="checkbox" id="exStretch" value="stretch"><span>ストレッチ</span></label>
+        <label><input type="checkbox" id="exNone" value="none"><span>休養</span></label>
+      </div>
+      <div id="runDistWrapper" class="hidden"><label>距離 (km)</label><input type="number" step="0.1" id="runDistInput" placeholder="例: 10"></div>
+
+      <label>昼食</label>
+      <div class="row" style="margin-bottom:4px;">
+        <select id="lunchSelect"><option value="bento">弁当(持参)</option><option value="onigiri_low">おにぎり(低脂質)</option><option value="onigiri_high">おにぎり(高脂質)</option><option value="bread">パン</option><option value="other">その他</option></select>
+        <input type="number" id="lunchCount" min="0" placeholder="個数"><input type="text" id="lunchMemo" class="hidden" placeholder="内容">
+      </div>
+      <div class="row hidden" id="lunchRow2" style="margin-bottom:4px;">
+        <select id="lunchSelect2"><option value="">-- 追加なし --</option><option value="bento">弁当(持参)</option><option value="onigiri_low">おにぎり(低脂質)</option><option value="onigiri_high">おにぎり(高脂質)</option><option value="bread">パン</option><option value="other">その他</option></select>
+        <input type="number" id="lunchCount2" min="0" placeholder="個数"><input type="text" id="lunchMemo2" class="hidden" placeholder="内容">
+      </div>
+      <button type="button" id="btnAddLunch" class="btn-add-snack" style="padding:4px;font-size:11px;">＋ 昼食の組み合わせを追加</button>
+
+      <label>間食</label>
+      <div id="snackContainer"></div>
+      <button type="button" class="btn-add-snack" onclick="addSnackRow()">＋ 間食を追加</button>
+
+      <label>変動要因 (ノイズの記録)</label>
+      <div class="checkbox-group grid">
+        <label><input type="checkbox" id="tagHoliday"><span>休日(祝休・有休)</span></label>
+        <label><input type="checkbox" id="tagNoBM"><span>便通なし</span></label>
+        <label><input type="checkbox" id="tagLunchOut"><span>昼外食</span></label>
+        <label><input type="checkbox" id="tagDinnerOut"><span>夜外食</span></label>
+        <label><input type="checkbox" id="tagAlcohol"><span>飲酒</span></label>
+        <label><input type="checkbox" id="tagSalty"><span>塩分多め</span></label>
+        <label><input type="checkbox" id="tagWorkStress"><span>残業/ストレス</span></label>
+        <label><input type="checkbox" id="tagMusclePain"><span>筋肉痛/疲労</span></label>
+      </div>
+
+      <label>今日の一言日記 (気づき・生活)</label>
+      <textarea id="memoInput" rows="2" placeholder="走った感覚、体調、食事の気づきなど"></textarea>
+
+      <button type="button" class="btn-save-sub" onclick="saveData(false)">記録を更新 (都度保存)</button>
+      <div id="quickSaveToast"></div>
+      <button type="button" class="btn-save-main" onclick="saveData(true)">本日の記録を完了して総合分析</button>
     </div>
   </div>
 
-  <div class="card">
-    <h2>週間レビュー (カロリー理論値 vs 実測値)</h2>
-    <div style="overflow-x:auto;">
-      <table class="notion-table" id="weeklyReviewTable">
-        <thead><tr><th>期間</th><th>走(km)</th><th>間食</th><th>運動</th><th>正味</th><th>体重差</th><th>判定</th></tr></thead>
-        <tbody></tbody>
-      </table>
+  <!-- ページ1: 分析・推移 -->
+  <div class="swipe-page" id="page1">
+    <div class="card">
+      <h2>体重推移 (ズーム表示)</h2>
+      <canvas id="weightChart"></canvas>
+      <button type="button" class="btn-save-sub" style="margin-top:8px;padding:6px;font-size:11px;" onclick="document.getElementById('chartModal').classList.remove('hidden')">グラフ拡大</button>
+      <div class="btn-group">
+        <button id="btn1w" onclick="drawChart(7)">1週間</button>
+        <button id="btn1m" onclick="drawChart(30)">1ヶ月</button>
+        <button id="btn6m" onclick="drawChart(180)">半年</button>
+      </div>
+      <div class="row" style="margin-top:8px;">
+        <button type="button" class="btn-save-sub" style="margin:0;font-size:12px;" onclick="copyForAI()">データコピー</button>
+        <button type="button" class="btn-save-sub" style="margin:0;background:#2e7d32;color:#fff;border-color:#2e7d32;font-size:12px;" onclick="downloadCSV()">CSV保存</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>週間サマリーレビュー</h2>
+      <div id="weeklyCardsContainer">集計中...</div>
+    </div>
+
+    <div class="card">
+      <h2>ノイズ要因の上振れ影響度</h2>
+      <div id="noiseImpactList" style="font-size:12px;line-height:1.8;color:var(--text-main);">集計中...</div>
+    </div>
+
+    <div class="card">
+      <h2>間食タイミング比率</h2>
+      <div id="snackTimingList" style="font-size:12px;line-height:1.8;color:var(--text-main);">集計中...</div>
     </div>
   </div>
 
-  <div class="card">
-    <h2>ノイズ要因の上振れ影響度 (翌朝体重)</h2>
-    <div id="noiseImpactList" style="font-size:13px;line-height:1.8;color:var(--text-main);">集計中...</div>
+  <!-- ページ2: 全履歴 -->
+  <div class="swipe-page" id="page2">
+    <div class="card">
+      <h2>月間進捗</h2>
+      <div id="summaryContainer"></div>
+    </div>
+    <div class="card">
+      <h2>過去ログ一覧</h2>
+      <div id="historyContainer"></div>
+    </div>
   </div>
 
-  <div class="card">
-    <h2>間食のタイミング別比率</h2>
-    <div id="snackTimingList" style="font-size:13px;line-height:1.8;color:var(--text-main);">集計中...</div>
-  </div>
-</div>
-
-<!-- タブ3: 全履歴 -->
-<div id="historyTab" class="tab-content hidden">
-  <div class="card">
-    <h2>月間進捗サマリー</h2>
-    <div id="summaryContainer"></div>
-  </div>
-  <div class="card">
-    <h2>過去ログ一覧</h2>
-    <div id="historyContainer"></div>
-  </div>
 </div>
 
 <div id="chartModal" class="hidden">
   <div class="modal-content">
-    <span style="position:absolute;top:12px;right:16px;font-size:24px;cursor:pointer;color:#999;" onclick="document.getElementById('chartModal').classList.add('hidden')">&times;</span>
-    <h3 style="margin:0 0 12px;font-size:14px;">拡大トレンド</h3>
+    <span style="position:absolute;top:10px;right:14px;font-size:22px;cursor:pointer;color:#999;" onclick="document.getElementById('chartModal').classList.add('hidden')">&times;</span>
+    <h3 style="margin:0 0 10px;font-size:13px;">拡大トレンド</h3>
     <canvas id="modalCanvas"></canvas>
   </div>
 </div>
@@ -365,18 +404,26 @@ input:focus, select:focus {
 <script>
   var GOAL_KM = 100;
   var TARGET_WEIGHT = 60.0;
+  var currentChartDays = 7;
   var $ = function(id) { return document.getElementById(id); };
   var lm = {'bento':'弁当','onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
   var md = {'great':'◎','good':'○','soso':'△','bad':'✕'};
 
-  function switchTab(tabId, el) {
-    document.querySelectorAll('.tab-content').forEach(function(c) { c.classList.add('hidden'); });
-    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('active'); });
-    $(tabId).classList.remove('hidden');
-    el.classList.add('active');
-    if (tabId === 'analysisTab') {
-      setTimeout(function() { drawChart(30); renderAnalysisViews(); }, 50);
+  // スワイプ同期
+  var container = $('swipeContainer');
+  container.addEventListener('scroll', function() {
+    var pageIdx = Math.round(container.scrollLeft / window.innerWidth);
+    document.querySelectorAll('.tab-btn').forEach(function(b, idx) {
+      b.classList.toggle('active', idx === pageIdx);
+    });
+    if (pageIdx === 1) {
+      drawChart(currentChartDays);
+      renderAnalysisViews();
     }
+  });
+
+  function goToPage(idx) {
+    container.scrollTo({ left: window.innerWidth * idx, behavior: 'smooth' });
   }
 
   function getL(t, c, m) {
@@ -425,7 +472,7 @@ input:focus, select:focus {
     time = time || ''; cal = cal || ''; content = content || '';
     var div = document.createElement('div');
     div.className = 'snack-item';
-    div.innerHTML = '<div class="row" style="margin-bottom:6px;">' +
+    div.innerHTML = '<div class="row" style="margin-bottom:4px;">' +
       '<select class="snack-time" style="flex:2;">' +
       '<option value="">タイミング</option>' +
       '<option value="morning"' + (time === 'morning' ? ' selected' : '') + '>朝</option>' +
@@ -468,8 +515,9 @@ input:focus, select:focus {
     var curW = raw[lastDate] ? raw[lastDate].weight : null;
     if (curW) {
       $('kpiCurrent').innerText = curW + ' kg';
-      var diffGoal = Math.round((curW - TARGET_WEIGHT) * 10) / 10;
-      $('kpiToGoal').innerText = (diffGoal > 0 ? '+' : '') + diffGoal + ' kg';
+      // 目標まで（マイナス表示）
+      var diffGoal = Math.round((TARGET_WEIGHT - curW) * 10) / 10;
+      $('kpiToGoal').innerText = diffGoal + ' kg';
     }
     var today = new Date();
     var d7 = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 7);
@@ -678,10 +726,11 @@ input:focus, select:focus {
     var dates = Object.keys(raw).sort();
     if (!dates.length) return;
 
-    // 1. 週間レビューテーブル（過去4週）
-    var tbody = $('weeklyReviewTable').querySelector('tbody');
-    tbody.innerHTML = '';
+    // 1. 週間レビュー（カード形式）
+    var container = $('weeklyCardsContainer');
+    container.innerHTML = '';
     var today = new Date();
+    var foundAny = false;
     for (var w = 0; w < 4; w++) {
       var wEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (w * 7));
       var wStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (w * 7 + 6));
@@ -702,25 +751,32 @@ input:focus, select:focus {
           }
         }
       }
+      if (wList.length === 0 && runTot === 0 && eatTot === 0) continue;
+      foundAny = true;
       var net = eatTot - burnTot;
-      var wDiff = (wList.length >= 2) ? (Math.round((wList[wList.length - 1] - wList[0]) * 10) / 10) : '-';
-      var comment = '-';
-      if (wDiff !== '-') {
-        if (net <= 0 && wDiff <= 0) comment = '理論値通り◎';
-        else if (net <= 0 && wDiff > 0) comment = 'ノイズ滞留疑い';
-        else if (net > 0 && wDiff > 0) comment = '余剰反映';
-        else comment = '良好';
+      var wDiff = (wList.length >= 2) ? (Math.round((wList[wList.length - 1] - wList[0]) * 10) / 10) : null;
+      var judge = '良好';
+      if (wDiff !== null) {
+        if (net <= 0 && wDiff <= 0) judge = '理論値通りに脂肪燃焼中◎';
+        else if (net <= 0 && wDiff > 0) judge = 'ノイズ（水分・塩分）滞留疑い';
+        else if (net > 0 && wDiff > 0) judge = 'カロリー余剰の反映';
       }
-      var tr = document.createElement('tr');
-      tr.innerHTML = '<td>' + (wStart.getMonth()+1)+'/'+wStart.getDate() + '〜' + (wEnd.getMonth()+1)+'/'+wEnd.getDate() + '</td>' +
-        '<td>' + runTot.toFixed(1) + '</td>' +
-        '<td>' + eatTot + '</td>' +
-        '<td>' + burnTot + '</td>' +
-        '<td style="color:' + (net<=0?'#2e7d32':'#c62828') + ';font-weight:600;">' + (net>0?'+':'') + net + '</td>' +
-        '<td>' + (wDiff!=='-'?(wDiff>0?'+'+wDiff:wDiff):'-') + 'kg</td>' +
-        '<td>' + comment + '</td>';
-      tbody.appendChild(tr);
+
+      var card = document.createElement('div');
+      card.className = 'week-card';
+      card.innerHTML = '<div class="week-card-head">' +
+        '<span>' + (w === 0 ? '今週' : w === 1 ? '先週' : w + '週前') + ' (' + (wStart.getMonth()+1)+'/'+wStart.getDate() + '〜' + (wEnd.getMonth()+1)+'/'+wEnd.getDate() + ')</span>' +
+        '<span style="color:' + (wDiff !== null ? (wDiff <= 0 ? '#2e7d32' : '#c62828') : '#787774') + '">' + (wDiff !== null ? (wDiff > 0 ? '+' : '') + wDiff + ' kg' : '-') + '</span>' +
+        '</div>' +
+        '<div class="week-card-metrics">' +
+        '<div>走行距離<span>' + runTot.toFixed(1) + ' km</span></div>' +
+        '<div>正味収支<span style="color:' + (net <= 0 ? '#2e7d32' : '#c62828') + '">' + (net > 0 ? '+' : '') + net + ' kcal</span></div>' +
+        '<div>間食 / 消費<span>' + eatTot + ' / ' + burnTot + '</span></div>' +
+        '</div>' +
+        '<div class="week-card-judge">💡 ' + judge + '</div>';
+      container.appendChild(card);
     }
+    if (!foundAny) container.innerHTML = 'データなし';
 
     // 2. ノイズ要因の影響度
     var noiseTags = [
@@ -825,10 +881,10 @@ input:focus, select:focus {
       '<span style="color:#c62828">約' + mFat + 'gの脂肪余剰ペース</span>';
     
     $('summaryContainer').innerHTML = '<div style="text-align:left;">' +
-      '<div style="font-size:12px;color:var(--text-sub);font-weight:600;margin-bottom:4px;">月間走行距離: ' + mRun.toFixed(1) + ' / ' + GOAL_KM + 'km</div>' +
+      '<div style="font-size:11px;color:var(--text-sub);font-weight:600;margin-bottom:4px;">月間走行距離: ' + mRun.toFixed(1) + ' / ' + GOAL_KM + 'km</div>' +
       '<div class="prog-bg"><div class="prog-bar" style="width:' + progPct + '%"></div></div>' +
-      '<div style="font-size:12px;color:var(--text-sub);font-weight:600;margin-top:8px;">今月の正味カロリー: ' + (mNet > 0 ? '+' : '') + mNet + 'kcal</div>' +
-      '<div style="font-size:14px;margin-top:2px;">' + fatHtml + '</div></div>';
+      '<div style="font-size:11px;color:var(--text-sub);font-weight:600;margin-top:6px;">今月の正味カロリー: ' + (mNet > 0 ? '+' : '') + mNet + 'kcal</div>' +
+      '<div style="font-size:13px;margin-top:2px;">' + fatHtml + '</div></div>';
 
     var html = '';
     var tm = { 'morning': '朝', 'noon': '昼', 'evening': '夕方', 'before_dinner': '夕食前', 'after_dinner': '夕食後' };
@@ -873,12 +929,12 @@ input:focus, select:focus {
       if (r.musclePain) tgs.push("筋肉痛/疲労");
 
       var moodLabel = md[r.mood] || r.mood || '';
-      var moodTxt = moodLabel ? '<span style="display:inline-block;width:20px;text-align:center;font-weight:bold;margin-right:6px;color:#0288d1;">' + moodLabel + '</span>' : '';
+      var moodTxt = moodLabel ? '<span style="display:inline-block;width:18px;text-align:center;font-weight:bold;margin-right:4px;color:#0288d1;">' + moodLabel + '</span>' : '';
 
-      html += '<div style="border-bottom:1px solid var(--border-light);padding:14px 0;">' +
-        '<div style="display:flex;align-items:center;margin-bottom:4px;">' + moodTxt + '<span style="font-weight:bold;color:var(--text-main);font-size:15px;">' + d + ' : ' + r.weight + 'kg</span></div>' +
+      html += '<div style="border-bottom:1px solid var(--border-light);padding:10px 0;">' +
+        '<div style="display:flex;align-items:center;margin-bottom:4px;">' + moodTxt + '<span style="font-weight:bold;color:var(--text-main);font-size:14px;">' + d + ' : ' + r.weight + 'kg</span></div>' +
         balHtml +
-        '<div style="color:var(--text-sub);line-height:1.5;margin-top:6px;font-size:12px;">運動: ' + (ex.length ? ex.join(', ') : 'なし') + ' | 昼食: ' + lTxt + '<br>間食: ' + sTxt + '<br>要因: ' + (tgs.length ? tgs.join('・') : 'なし') + (r.memo ? '<br>メモ: ' + r.memo : '') + '</div></div>';
+        '<div style="color:var(--text-sub);line-height:1.5;margin-top:6px;font-size:12px;">運動: ' + (ex.length ? ex.join(', ') : 'なし') + ' | 昼食: ' + lTxt + '<br>間食: ' + sTxt + '<br>要因: ' + (tgs.length ? tgs.join('・') : 'なし') + (r.memo ? '<br>日記: ' + r.memo : '') + '</div></div>';
     });
     $('historyContainer').innerHTML = html;
   }
@@ -887,7 +943,7 @@ input:focus, select:focus {
     var raw = getSafeData();
     var dates = Object.keys(raw).sort();
     if (!dates.length) return null;
-    var csv = "日付(曜日),平日/休日,調子,体重,運動,運動消費(kcal),昼食,間食,間食摂取(kcal),差分(間食-消費kcal),外食飲酒等,体調・疲労,メモ\n";
+    var csv = "日付(曜日),平日/休日,調子,体重,運動,運動消費(kcal),昼食,間食,間食摂取(kcal),差分(間食-消費kcal),外食飲酒等,体調・疲労,一言日記\n";
     var tm = { 'morning': '朝', 'noon': '昼', 'evening': '夕方', 'before_dinner': '夕食前', 'after_dinner': '夕食後' };
     var dw = ['日', '月', '火', '水', '木', '金', '土'];
     dates.forEach(function(d) {
@@ -941,49 +997,76 @@ input:focus, select:focus {
   var modalChartInstance = null;
 
   function drawChart(days) {
+    currentChartDays = days;
     ['btn1w', 'btn1m', 'btn6m'].forEach(function(id) { document.getElementById(id).classList.remove('active'); });
     document.getElementById(days === 7 ? 'btn1w' : days === 30 ? 'btn1m' : 'btn6m').classList.add('active');
+    
     var raw = getSafeData();
     var labels = [], w = [], cols = [], mAvgs = [], targetLine = [], today = new Date();
+    var minVal = 999, maxVal = 0;
+
     for (var i = days - 1; i >= 0; i--) {
       var d = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i);
       var ds = fmtDate(d);
       labels.push(ds.slice(5).replace('-', '/'));
-      targetLine.push(TARGET_WEIGHT);
+      
       var rd = raw[ds];
       if (rd && rd.weight) {
         w.push(rd.weight);
+        if (rd.weight < minVal) minVal = rd.weight;
+        if (rd.weight > maxVal) maxVal = rd.weight;
         cols.push(rd.lunchOut || rd.dinnerOut || rd.alcohol || rd.salty || rd.noBM || rd.workStress || rd.musclePain ? 'rgba(198,40,40,1)' : (rd.run || rd.muscleUpper || rd.muscleLower || rd.muscle ? 'rgba(46,125,50,1)' : 'rgba(35,131,226,1)'));
       } else {
         w.push(null);
         cols.push('rgba(35,131,226,1)');
       }
+      
       var s = 0, c = 0;
       for (var j = 0; j < 7; j++) {
         var pd = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (i + j));
         var pds = fmtDate(pd);
         if (raw[pds] && raw[pds].weight) { s += raw[pds].weight; c++; }
       }
-      mAvgs.push(c > 0 ? (s / c).toFixed(2) : null);
+      var avg = c > 0 ? parseFloat((s / c).toFixed(2)) : null;
+      mAvgs.push(avg);
+      if (avg) {
+        if (avg < minVal) minVal = avg;
+        if (avg > maxVal) maxVal = avg;
+      }
+
+      if (days > 7) {
+        targetLine.push(TARGET_WEIGHT);
+      }
     }
     
     if (typeof Chart === 'undefined') return;
 
+    var datasets = [];
+    if (days > 7) {
+      datasets.push({ label: '目標(60kg)', data: targetLine, borderColor: 'rgba(239,83,80,0.6)', borderDash: [4, 4], borderWidth: 1.5, pointRadius: 0, fill: false, order: 3 });
+    }
+    datasets.push({ label: '7日平均', data: mAvgs, borderColor: 'rgba(245,158,11,0.8)', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, spanGaps: true, tension: 0.3, order: 1 });
+    datasets.push({ label: '実測体重', data: w, borderColor: 'rgba(55,53,47,0.2)', backgroundColor: 'transparent', pointBackgroundColor: cols, pointBorderColor: cols, borderWidth: 1.5, pointRadius: 4, spanGaps: true, tension: 0.1, order: 2 });
+
+    // 縦軸（Y軸）スケールの動的最適化
+    var yScaleConfig = { grid: { color: 'rgba(55,53,47,0.06)' } };
+    if (days === 7 && minVal !== 999) {
+      // 1週間表示時は実測値±0.4kgでタイトにズーム（微減をダイナミックに可視化）
+      yScaleConfig.min = Math.floor((minVal - 0.4) * 10) / 10;
+      yScaleConfig.max = Math.ceil((maxVal + 0.4) * 10) / 10;
+      yScaleConfig.ticks = { stepSize: 0.2 };
+    } else {
+      yScaleConfig.grace = '5%';
+    }
+
     var getChartConfig = function() {
       return {
         type: 'line',
-        data: {
-          labels: labels,
-          datasets: [
-            { label: '目標(60kg)', data: targetLine, borderColor: 'rgba(239,83,80,0.6)', borderDash: [5, 5], borderWidth: 1.5, pointRadius: 0, fill: false, order: 3 },
-            { label: '7日平均', data: mAvgs, borderColor: 'rgba(245,158,11,0.8)', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, spanGaps: true, tension: 0.3, order: 1 },
-            { label: '実測体重', data: w, borderColor: 'rgba(55,53,47,0.2)', backgroundColor: 'transparent', pointBackgroundColor: cols, pointBorderColor: cols, borderWidth: 1.5, pointRadius: 4, spanGaps: true, tension: 0.1, order: 2 }
-          ]
-        },
+        data: { labels: labels, datasets: datasets },
         options: {
           responsive: true,
-          scales: { x: { grid: { display: false } }, y: { grace: '10%', grid: { color: 'rgba(55,53,47,0.06)' } } },
-          plugins: { legend: { display: true } }
+          scales: { x: { grid: { display: false } }, y: yScaleConfig },
+          plugins: { legend: { display: true, labels: { boxWidth: 10, font: { size: 11 } } } }
         }
       };
     };
@@ -1001,7 +1084,6 @@ input:focus, select:focus {
   loadDataForDate();
   updateKpiHeader();
   updateHistoryList();
-  drawChart(30);
 </script>
 </body>
 </html>
