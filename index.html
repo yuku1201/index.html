@@ -249,6 +249,19 @@ input:focus, select:focus, textarea:focus {
   align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;
 }
 .modal-content { background: #fff; width: 100%; border-radius: 8px; padding: 16px; position: relative; }
+
+/* ガーミン同期通知バッジ */
+.sync-banner {
+  background: #e8f4fd;
+  border: 1px solid #90caf9;
+  color: #0288d1;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  text-align: center;
+}
 </style>
 </head>
 <body>
@@ -287,6 +300,7 @@ input:focus, select:focus, textarea:focus {
   <div class="swipe-page" id="page0">
     <div class="card">
       <h2>記録・修正 <span id="streakBadge" style="font-size:11px;font-weight:normal;color:var(--text-sub);">8日連続記録中</span></h2>
+      <div id="syncBanner" class="sync-banner hidden"></div>
       <div id="feedbackBanner" class="hidden"></div>
       
       <label>日付</label><input type="date" id="dateInput">
@@ -309,6 +323,10 @@ input:focus, select:focus, textarea:focus {
         <label><input type="checkbox" id="exNone" value="none"><span>休養</span></label>
       </div>
       <div id="runDistWrapper" class="hidden"><label>距離 (km)</label><input type="number" step="0.1" id="runDistInput" placeholder="例: 10"></div>
+      
+      <!-- Garmin自動連携 歩数表示/手動入力欄 -->
+      <label>Garmin 歩数 (自動連携)</label>
+      <input type="number" id="stepsInput" placeholder="例: 12500 (Garmin自動同期)">
 
       <label>昼食</label>
       <div class="row" style="margin-bottom:4px;">
@@ -361,6 +379,17 @@ input:focus, select:focus, textarea:focus {
         <button type="button" class="btn-save-sub" style="margin:0;font-size:12px;" onclick="copyForAI()">データコピー</button>
         <button type="button" class="btn-save-sub" style="margin:0;background:#2e7d32;color:#fff;border-color:#2e7d32;font-size:12px;" onclick="downloadCSV()">CSV保存</button>
       </div>
+    </div>
+
+    <!-- 機種変更・消失防止用 バックアップ / 復元 -->
+    <div class="card">
+      <h2>端末データ管理 (バックアップ・復元)</h2>
+      <p style="font-size:11px;color:var(--text-sub);margin:0 0 8px;">スマホの機種変更時や定期バックアップに利用できます。</p>
+      <div class="row">
+        <button type="button" class="btn-save-sub" style="margin:0;font-size:11px;" onclick="exportBackupJSON()">バックアップ保存 (JSON)</button>
+        <button type="button" class="btn-save-sub" style="margin:0;font-size:11px;" onclick="$('importFileInput').click()">データ復元 (インポート)</button>
+      </div>
+      <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="importBackupJSON(event)">
     </div>
 
     <div class="card">
@@ -507,6 +536,48 @@ input:focus, select:focus, textarea:focus {
     } catch(e) { return {}; }
   }
 
+  /* --- 外部パラメータ（Garmin等）自動取り込み処理 --- */
+  function handleUrlParams() {
+    var params = new URLSearchParams(window.location.search);
+    var stepsParam = params.get('steps');
+    var runKmParam = params.get('run_km');
+    var dateParam = params.get('date');
+
+    if (stepsParam !== null || runKmParam !== null) {
+      var targetDate = dateParam || fmtDate(new Date());
+      var raw = getSafeData();
+      var entry = raw[targetDate] || {};
+
+      var msg = [];
+      if (stepsParam !== null) {
+        entry.steps = parseInt(stepsParam, 10) || 0;
+        msg.push('歩数: ' + entry.steps.toLocaleString() + '歩');
+      }
+      if (runKmParam !== null) {
+        var km = parseFloat(runKmParam) || 0;
+        if (km > 0) {
+          entry.run = true;
+          entry.runKm = km;
+          msg.push('ラン: ' + km + 'km');
+        }
+      }
+
+      raw[targetDate] = entry;
+      localStorage.setItem('myHealthData', JSON.stringify(raw));
+
+      $('dateInput').value = targetDate;
+      var banner = $('syncBanner');
+      banner.innerText = '⚡ Garmin同期完了 [' + targetDate + '] ' + msg.join(', ');
+      banner.classList.remove('hidden');
+
+      // URLからパラメータを取り除いて履歴をクリーンにする
+      if (window.history.replaceState) {
+        var cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+        window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+      }
+    }
+  }
+
   function updateKpiHeader() {
     var raw = getSafeData();
     var dates = Object.keys(raw).sort();
@@ -515,7 +586,6 @@ input:focus, select:focus, textarea:focus {
     var curW = raw[lastDate] ? raw[lastDate].weight : null;
     if (curW) {
       $('kpiCurrent').innerText = curW + ' kg';
-      // 目標まで（マイナス表示）
       var diffGoal = Math.round((TARGET_WEIGHT - curW) * 10) / 10;
       $('kpiToGoal').innerText = diffGoal + ' kg';
     }
@@ -616,6 +686,7 @@ input:focus, select:focus, textarea:focus {
     }
     $('exRun').checked = rd.run || false;
     $('runDistInput').value = rd.runKm || '';
+    $('stepsInput').value = rd.steps !== undefined ? rd.steps : '';
     $('exMuscleUpper').checked = rd.muscleUpper || rd.muscle || false;
     $('exMuscleLower').checked = rd.muscleLower || false;
     $('exStretch').checked = rd.stretch || false;
@@ -673,12 +744,15 @@ input:focus, select:focus, textarea:focus {
     });
     var moodEl = document.querySelector('input[name="mood"]:checked');
     var moodVal = moodEl ? moodEl.value : '';
+    var stepsVal = $('stepsInput').value;
+
     var data = getSafeData();
     var newData = {
       weight: parseFloat(w),
       mood: moodVal,
       run: $('exRun').checked,
       runKm: $('exRun').checked ? parseFloat($('runDistInput').value || 0) : 0,
+      steps: stepsVal !== '' ? parseInt(stepsVal, 10) : (data[d] && data[d].steps !== undefined ? data[d].steps : 0),
       muscleUpper: $('exMuscleUpper').checked,
       muscleLower: $('exMuscleLower').checked,
       stretch: $('exStretch').checked,
@@ -726,7 +800,6 @@ input:focus, select:focus, textarea:focus {
     var dates = Object.keys(raw).sort();
     if (!dates.length) return;
 
-    // 1. 週間レビュー（カード形式）
     var container = $('weeklyCardsContainer');
     container.innerHTML = '';
     var today = new Date();
@@ -778,7 +851,6 @@ input:focus, select:focus, textarea:focus {
     }
     if (!foundAny) container.innerHTML = 'データなし';
 
-    // 2. ノイズ要因の影響度
     var noiseTags = [
       { id: 'dinnerOut', label: '夜外食' },
       { id: 'alcohol', label: '飲酒' },
@@ -810,7 +882,6 @@ input:focus, select:focus, textarea:focus {
     });
     $('noiseImpactList').innerHTML = noiseHtml;
 
-    // 3. 間食タイミング比率
     var timeMap = { 'morning': 0, 'noon': 0, 'evening': 0, 'before_dinner': 0, 'after_dinner': 0 };
     var timeLabels = { 'morning': '朝', 'noon': '昼', 'evening': '夕方', 'before_dinner': '夕食前', 'after_dinner': '夕食後' };
     var totalSnackCal = 0;
@@ -907,6 +978,7 @@ input:focus, select:focus, textarea:focus {
 
       var ex = [];
       if (r.run) ex.push('ラン' + r.runKm + 'km');
+      if (r.steps) ex.push(r.steps.toLocaleString() + '歩');
       if (r.muscleUpper || r.muscle) ex.push('筋(上)');
       if (r.muscleLower) ex.push('筋(下)');
       if (r.stretch) ex.push('ストレッチ');
@@ -943,7 +1015,7 @@ input:focus, select:focus, textarea:focus {
     var raw = getSafeData();
     var dates = Object.keys(raw).sort();
     if (!dates.length) return null;
-    var csv = "日付(曜日),平日/休日,調子,体重,運動,運動消費(kcal),昼食,間食,間食摂取(kcal),差分(間食-消費kcal),外食飲酒等,体調・疲労,一言日記\n";
+    var csv = "日付(曜日),平日/休日,調子,体重,歩数,運動,運動消費(kcal),昼食,間食,間食摂取(kcal),差分(間食-消費kcal),外食飲酒等,体調・疲労,一言日記\n";
     var tm = { 'morning': '朝', 'noon': '昼', 'evening': '夕方', 'before_dinner': '夕食前', 'after_dinner': '夕食後' };
     var dw = ['日', '月', '火', '水', '木', '金', '土'];
     dates.forEach(function(d) {
@@ -972,7 +1044,7 @@ input:focus, select:focus, textarea:focus {
       var cond = [];
       if (r.noBM) cond.push("便通なし"); if (r.workStress) cond.push("残業/ストレス"); if (r.musclePain) cond.push("筋肉痛/疲労");
       var moodLabel = md[r.mood] || r.mood || '';
-      csv += d + '(' + dayStr + '),' + (r.holiday ? '休日' : '平日') + ',' + moodLabel + ',' + r.weight + ',' + (ex.length ? ex.join('+') : '休') + ',' + burn + ',' + lTxt + ',' + sTxt + ',' + eat + ',' + (eat - burn) + ',' + (tgs.length ? tgs.join('・') : '無') + ',' + (cond.length ? cond.join('・') : '通常') + ',' + (r.memo || '') + '\n';
+      csv += d + '(' + dayStr + '),' + (r.holiday ? '休日' : '平日') + ',' + moodLabel + ',' + r.weight + ',' + (r.steps || 0) + ',' + (ex.length ? ex.join('+') : '休') + ',' + burn + ',' + lTxt + ',' + sTxt + ',' + eat + ',' + (eat - burn) + ',' + (tgs.length ? tgs.join('・') : '無') + ',' + (cond.length ? cond.join('・') : '通常') + ',' + (r.memo || '') + '\n';
     });
     return csv;
   }
@@ -991,6 +1063,41 @@ input:focus, select:focus, textarea:focus {
     link.href = URL.createObjectURL(blob);
     link.download = "health_data.csv";
     link.click();
+  }
+
+  /* --- バックアップ（JSONエクスポート・インポート） --- */
+  function exportBackupJSON() {
+    var data = localStorage.getItem('myHealthData');
+    if (!data || data === '{}') return alert('バックアップするデータがありません');
+    var blob = new Blob([data], { type: 'application/json' });
+    var link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = "my_health_backup_" + fmtDate(new Date()) + ".json";
+    link.click();
+  }
+
+  function importBackupJSON(e) {
+    var file = e.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function(event) {
+      try {
+        var parsed = JSON.parse(event.target.result);
+        if (typeof parsed === 'object' && parsed !== null) {
+          if (confirm('現在のデータを上書きして復元しますか？')) {
+            localStorage.setItem('myHealthData', JSON.stringify(parsed));
+            alert('復元が完了しました！');
+            location.reload();
+          }
+        } else {
+          alert('無効なデータ形式です。');
+        }
+      } catch(err) {
+        alert('ファイルの読み込みに失敗しました。JSONファイルか確認してください。');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
   }
 
   var chartInstance = null;
@@ -1048,10 +1155,8 @@ input:focus, select:focus, textarea:focus {
     datasets.push({ label: '7日平均', data: mAvgs, borderColor: 'rgba(245,158,11,0.8)', backgroundColor: 'transparent', borderWidth: 2, pointRadius: 0, spanGaps: true, tension: 0.3, order: 1 });
     datasets.push({ label: '実測体重', data: w, borderColor: 'rgba(55,53,47,0.2)', backgroundColor: 'transparent', pointBackgroundColor: cols, pointBorderColor: cols, borderWidth: 1.5, pointRadius: 4, spanGaps: true, tension: 0.1, order: 2 });
 
-    // 縦軸（Y軸）スケールの動的最適化
     var yScaleConfig = { grid: { color: 'rgba(55,53,47,0.06)' } };
     if (days === 7 && minVal !== 999) {
-      // 1週間表示時は実測値±0.4kgでタイトにズーム（微減をダイナミックに可視化）
       yScaleConfig.min = Math.floor((minVal - 0.4) * 10) / 10;
       yScaleConfig.max = Math.ceil((maxVal + 0.4) * 10) / 10;
       yScaleConfig.ticks = { stepSize: 0.2 };
@@ -1080,7 +1185,9 @@ input:focus, select:focus, textarea:focus {
     modalChartInstance = new Chart(mCtx, getChartConfig());
   }
 
+  // 初期化実行順序（パラメータの自動読み取りを最優先）
   $('dateInput').value = fmtDate(new Date());
+  handleUrlParams();
   loadDataForDate();
   updateKpiHeader();
   updateHistoryList();
