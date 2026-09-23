@@ -50,7 +50,7 @@ body {
 .kpi-label { font-size: 10px; color: var(--text-sub); margin-bottom: 2px; font-weight: 500; }
 .kpi-val { font-size: 13px; font-weight: 700; color: var(--text-main); }
 
-/* タブバー（固定風） */
+/* タブバー */
 .tab-bar {
   display: flex;
   border-bottom: 1px solid var(--border);
@@ -74,7 +74,7 @@ body {
   border-bottom: 2px solid var(--text-main);
 }
 
-/* スワイプコンテナ構造 */
+/* スワイプコンテナ */
 .swipe-container {
   display: flex;
   width: 100vw;
@@ -120,7 +120,6 @@ label {
   letter-spacing: 0.5px;
 }
 
-/* フォームコントロール */
 input[type="number"], input[type="text"], input[type="date"], select, textarea {
   width: 100%;
   padding: 9px 10px;
@@ -139,7 +138,6 @@ input:focus, select:focus, textarea:focus {
 .row { display: flex; gap: 6px; margin-bottom: 6px; }
 .row > * { flex: 1; }
 
-/* 4段階調子バッジ */
 .mood-group { display: flex; gap: 6px; margin-bottom: 10px; }
 .mood-group label {
   flex: 1; text-align: center; background: var(--tag-gray-bg); padding: 8px 0;
@@ -152,7 +150,6 @@ input:focus, select:focus, textarea:focus {
 .mood-group label:has(input[value="soso"]:checked) { background: var(--tag-blue-bg); border-color: #90caf9; color: var(--tag-blue-text); }
 .mood-group label:has(input[value="bad"]:checked) { background: var(--tag-red-bg); border-color: #ef9a9a; color: var(--tag-red-text); }
 
-/* チェックボックスタグ */
 .checkbox-group { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
 .checkbox-group label {
   display: inline-flex; align-items: center; justify-content: center;
@@ -176,7 +173,6 @@ input:focus, select:focus, textarea:focus {
   background: var(--tag-blue-bg); color: var(--tag-blue-text); border-color: #b3e5fc; font-weight: 600;
 }
 
-/* 間食入力 */
 .snack-item {
   background: #fafafa; border: 1px solid var(--border-light);
   border-radius: 6px; padding: 8px; margin-bottom: 6px;
@@ -191,7 +187,6 @@ input:focus, select:focus, textarea:focus {
   font-size: 12px; font-weight: 500; margin-bottom: 6px;
 }
 
-/* ボタン */
 .btn-save-sub {
   background: var(--tag-gray-bg); color: var(--text-main); border: 1px solid var(--border);
   padding: 10px; width: 100%; border-radius: 6px; font-size: 13px; font-weight: 600;
@@ -208,7 +203,6 @@ input:focus, select:focus, textarea:focus {
   margin-bottom: 12px; font-size: 12px; line-height: 1.5; color: var(--text-main);
 }
 
-/* 週間レビューカード */
 .week-card {
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -228,7 +222,6 @@ input:focus, select:focus, textarea:focus {
   margin-top: 6px; font-size: 11px; font-weight: 600; padding: 4px 6px; border-radius: 4px; background: var(--tag-gray-bg);
 }
 
-/* 収支バッジ */
 .bal-box { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
 .bal-good { background: var(--tag-green-bg); color: var(--tag-green-text); }
 .bal-over { background: var(--tag-red-bg); color: var(--tag-red-text); }
@@ -250,7 +243,6 @@ input:focus, select:focus, textarea:focus {
 }
 .modal-content { background: #fff; width: 100%; border-radius: 8px; padding: 16px; position: relative; }
 
-/* ガーミン同期通知バッジ */
 .sync-banner {
   background: #e8f4fd;
   border: 1px solid #90caf9;
@@ -266,7 +258,6 @@ input:focus, select:focus, textarea:focus {
 </head>
 <body>
 
-<!-- KPI ヘッダーサマリー -->
 <div class="kpi-container">
   <div class="kpi-card">
     <div class="kpi-label">現在体重</div>
@@ -286,14 +277,12 @@ input:focus, select:focus, textarea:focus {
   </div>
 </div>
 
-<!-- タブバー -->
 <div class="tab-bar">
   <button class="tab-btn active" id="tabBtn0" onclick="goToPage(0)">入力</button>
   <button class="tab-btn" id="tabBtn1" onclick="goToPage(1)">分析・推移</button>
   <button class="tab-btn" id="tabBtn2" onclick="goToPage(2)">全履歴</button>
 </div>
 
-<!-- 横スワイプ対応コンテナ -->
 <div class="swipe-container" id="swipeContainer">
   
   <!-- ページ0: 入力 -->
@@ -324,9 +313,17 @@ input:focus, select:focus, textarea:focus {
       </div>
       <div id="runDistWrapper" class="hidden"><label>距離 (km)</label><input type="number" step="0.1" id="runDistInput" placeholder="例: 10"></div>
       
-      <!-- Garmin自動連携 歩数表示/手動入力欄 -->
-      <label>Garmin 歩数 (自動連携)</label>
-      <input type="number" id="stepsInput" placeholder="例: 12500 (Garmin自動同期)">
+      <!-- Garmin自動連携 歩数＆睡眠時間 -->
+      <div class="row">
+        <div>
+          <label>Garmin 歩数</label>
+          <input type="number" id="stepsInput" placeholder="例: 12500">
+        </div>
+        <div>
+          <label>睡眠時間</label>
+          <input type="text" id="sleepInput" placeholder="例: 7h 15m または 7.2">
+        </div>
+      </div>
 
       <label>昼食</label>
       <div class="row" style="margin-bottom:4px;">
@@ -381,7 +378,7 @@ input:focus, select:focus, textarea:focus {
       </div>
     </div>
 
-    <!-- 機種変更・消失防止用 バックアップ / 復元 -->
+    <!-- 端末データ管理 -->
     <div class="card">
       <h2>端末データ管理 (バックアップ・復元)</h2>
       <p style="font-size:11px;color:var(--text-sub);margin:0 0 8px;">スマホの機種変更時や定期バックアップに利用できます。</p>
@@ -438,7 +435,6 @@ input:focus, select:focus, textarea:focus {
   var lm = {'bento':'弁当','onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
   var md = {'great':'◎','good':'○','soso':'△','bad':'✕'};
 
-  // スワイプ同期
   var container = $('swipeContainer');
   container.addEventListener('scroll', function() {
     var pageIdx = Math.round(container.scrollLeft / window.innerWidth);
@@ -540,10 +536,10 @@ input:focus, select:focus, textarea:focus {
   function handleUrlParams() {
     var params = new URLSearchParams(window.location.search);
     var stepsParam = params.get('steps');
-    var runKmParam = params.get('run_km');
+    var sleepParam = params.get('sleep');
     var dateParam = params.get('date');
 
-    if (stepsParam !== null || runKmParam !== null) {
+    if (stepsParam !== null || sleepParam !== null) {
       var targetDate = dateParam || fmtDate(new Date());
       var raw = getSafeData();
       var entry = raw[targetDate] || {};
@@ -553,13 +549,18 @@ input:focus, select:focus, textarea:focus {
         entry.steps = parseInt(stepsParam, 10) || 0;
         msg.push('歩数: ' + entry.steps.toLocaleString() + '歩');
       }
-      if (runKmParam !== null) {
-        var km = parseFloat(runKmParam) || 0;
-        if (km > 0) {
-          entry.run = true;
-          entry.runKm = km;
-          msg.push('ラン: ' + km + 'km');
+      if (sleepParam !== null && sleepParam.trim() !== '') {
+        // 分単位（例: 450）で来た場合は "7h 30m" 形式に整形
+        var val = sleepParam.trim();
+        if (/^\d+$/.test(val) && parseInt(val, 10) > 24) {
+          var totalMin = parseInt(val, 10);
+          var h = Math.floor(totalMin / 60);
+          var m = totalMin % 60;
+          entry.sleep = h + 'h ' + (m < 10 ? '0' : '') + m + 'm';
+        } else {
+          entry.sleep = val;
         }
+        msg.push('睡眠: ' + entry.sleep);
       }
 
       raw[targetDate] = entry;
@@ -570,7 +571,6 @@ input:focus, select:focus, textarea:focus {
       banner.innerText = '⚡ Garmin同期完了 [' + targetDate + '] ' + msg.join(', ');
       banner.classList.remove('hidden');
 
-      // URLからパラメータを取り除いて履歴をクリーンにする
       if (window.history.replaceState) {
         var cleanUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
         window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
@@ -687,6 +687,7 @@ input:focus, select:focus, textarea:focus {
     $('exRun').checked = rd.run || false;
     $('runDistInput').value = rd.runKm || '';
     $('stepsInput').value = rd.steps !== undefined ? rd.steps : '';
+    $('sleepInput').value = rd.sleep || '';
     $('exMuscleUpper').checked = rd.muscleUpper || rd.muscle || false;
     $('exMuscleLower').checked = rd.muscleLower || false;
     $('exStretch').checked = rd.stretch || false;
@@ -745,6 +746,7 @@ input:focus, select:focus, textarea:focus {
     var moodEl = document.querySelector('input[name="mood"]:checked');
     var moodVal = moodEl ? moodEl.value : '';
     var stepsVal = $('stepsInput').value;
+    var sleepVal = $('sleepInput').value;
 
     var data = getSafeData();
     var newData = {
@@ -753,6 +755,7 @@ input:focus, select:focus, textarea:focus {
       run: $('exRun').checked,
       runKm: $('exRun').checked ? parseFloat($('runDistInput').value || 0) : 0,
       steps: stepsVal !== '' ? parseInt(stepsVal, 10) : (data[d] && data[d].steps !== undefined ? data[d].steps : 0),
+      sleep: sleepVal.trim(),
       muscleUpper: $('exMuscleUpper').checked,
       muscleLower: $('exMuscleLower').checked,
       stretch: $('exStretch').checked,
@@ -979,6 +982,7 @@ input:focus, select:focus, textarea:focus {
       var ex = [];
       if (r.run) ex.push('ラン' + r.runKm + 'km');
       if (r.steps) ex.push(r.steps.toLocaleString() + '歩');
+      if (r.sleep) ex.push('睡眠' + r.sleep);
       if (r.muscleUpper || r.muscle) ex.push('筋(上)');
       if (r.muscleLower) ex.push('筋(下)');
       if (r.stretch) ex.push('ストレッチ');
@@ -1015,7 +1019,7 @@ input:focus, select:focus, textarea:focus {
     var raw = getSafeData();
     var dates = Object.keys(raw).sort();
     if (!dates.length) return null;
-    var csv = "日付(曜日),平日/休日,調子,体重,歩数,運動,運動消費(kcal),昼食,間食,間食摂取(kcal),差分(間食-消費kcal),外食飲酒等,体調・疲労,一言日記\n";
+    var csv = "日付(曜日),平日/休日,調子,体重,歩数,睡眠,運動,運動消費(kcal),昼食,間食,間食摂取(kcal),差分(間食-消費kcal),外食飲酒等,体調・疲労,一言日記\n";
     var tm = { 'morning': '朝', 'noon': '昼', 'evening': '夕方', 'before_dinner': '夕食前', 'after_dinner': '夕食後' };
     var dw = ['日', '月', '火', '水', '木', '金', '土'];
     dates.forEach(function(d) {
@@ -1044,7 +1048,7 @@ input:focus, select:focus, textarea:focus {
       var cond = [];
       if (r.noBM) cond.push("便通なし"); if (r.workStress) cond.push("残業/ストレス"); if (r.musclePain) cond.push("筋肉痛/疲労");
       var moodLabel = md[r.mood] || r.mood || '';
-      csv += d + '(' + dayStr + '),' + (r.holiday ? '休日' : '平日') + ',' + moodLabel + ',' + r.weight + ',' + (r.steps || 0) + ',' + (ex.length ? ex.join('+') : '休') + ',' + burn + ',' + lTxt + ',' + sTxt + ',' + eat + ',' + (eat - burn) + ',' + (tgs.length ? tgs.join('・') : '無') + ',' + (cond.length ? cond.join('・') : '通常') + ',' + (r.memo || '') + '\n';
+      csv += d + '(' + dayStr + '),' + (r.holiday ? '休日' : '平日') + ',' + moodLabel + ',' + r.weight + ',' + (r.steps || 0) + ',' + (r.sleep || '') + ',' + (ex.length ? ex.join('+') : '休') + ',' + burn + ',' + lTxt + ',' + sTxt + ',' + eat + ',' + (eat - burn) + ',' + (tgs.length ? tgs.join('・') : '無') + ',' + (cond.length ? cond.join('・') : '通常') + ',' + (r.memo || '') + '\n';
     });
     return csv;
   }
@@ -1065,7 +1069,6 @@ input:focus, select:focus, textarea:focus {
     link.click();
   }
 
-  /* --- バックアップ（JSONエクスポート・インポート） --- */
   function exportBackupJSON() {
     var data = localStorage.getItem('myHealthData');
     if (!data || data === '{}') return alert('バックアップするデータがありません');
@@ -1185,7 +1188,6 @@ input:focus, select:focus, textarea:focus {
     modalChartInstance = new Chart(mCtx, getChartConfig());
   }
 
-  // 初期化実行順序（パラメータの自動読み取りを最優先）
   $('dateInput').value = fmtDate(new Date());
   handleUrlParams();
   loadDataForDate();
