@@ -33,7 +33,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Notion風 KPIヘッダー */
 .kpi-container {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -50,7 +49,6 @@ body {
 .kpi-label { font-size: 10px; color: var(--text-sub); margin-bottom: 2px; font-weight: 500; }
 .kpi-val { font-size: 13px; font-weight: 700; color: var(--text-main); }
 
-/* タブバー */
 .tab-bar {
   display: flex;
   border-bottom: 1px solid var(--border);
@@ -74,7 +72,6 @@ body {
   border-bottom: 2px solid var(--text-main);
 }
 
-/* スワイプコンテナ */
 .swipe-container {
   display: flex;
   width: 100vw;
@@ -93,7 +90,6 @@ body {
   scroll-snap-align: start;
 }
 
-/* カード共通 */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -1106,7 +1102,7 @@ input:focus, select:focus, textarea:focus {
     
     var mCtx = document.getElementById('modalCanvas').getContext('2d');
     if (modalChartInstance) modalChartInstance.destroy();
-    modalChartInstance = new Chart(mCtx, getResetConfig ? getResetConfig() : getChartConfig());
+    modalChartInstance = new Chart(mCtx, getChartConfig());
   }
 
   $('dateInput').value = fmtDate(new Date());
