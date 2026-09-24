@@ -170,7 +170,6 @@ input:focus, select:focus, textarea:focus {
   background: var(--tag-blue-bg); color: var(--tag-blue-text); border-color: #b3e5fc; font-weight: 600;
 }
 
-/* 今日の家族用タグ */
 .family-group { display: flex; gap: 6px; margin-bottom: 6px; }
 .family-group label {
   background: var(--tag-gray-bg); padding: 6px 14px; border-radius: 6px;
@@ -234,7 +233,6 @@ input:focus, select:focus, textarea:focus {
 .bal-good { background: var(--tag-green-bg); color: var(--tag-green-text); }
 .bal-over { background: var(--tag-red-bg); color: var(--tag-red-text); }
 
-/* 家族ログの引用ブロック風スタイル */
 .family-log-box {
   background: #fafaf9;
   border-left: 3px solid #ab47bc;
@@ -349,7 +347,6 @@ input:focus, select:focus, textarea:focus {
       <label>今日の一言日記 (気づき・生活)</label>
       <textarea id="memoInput" rows="2" placeholder="走った感覚、体調、食事の気づきなど"></textarea>
 
-      <!-- 今日の家族欄 -->
       <label>今日の家族 (日常の一コマ・言動)</label>
       <div class="family-group">
         <label><input type="checkbox" id="famWife"><span>妻</span></label>
@@ -360,6 +357,12 @@ input:focus, select:focus, textarea:focus {
       <button type="button" class="btn-save-sub" onclick="saveData(false)">記録を更新 (都度保存)</button>
       <div id="quickSaveToast"></div>
       <button type="button" class="btn-save-main" onclick="saveData(true)">本日の記録を完了して総合分析</button>
+    </div>
+
+    <!-- 本日の記録サマリーカード（入力画面内） -->
+    <div class="card" id="todayCardWrapper">
+      <h2>選択中の日の記録サマリー</h2>
+      <div id="todayCardContent" style="color:var(--text-sub);font-size:12px;">データ読み込み中...</div>
     </div>
   </div>
 
@@ -380,6 +383,43 @@ input:focus, select:focus, textarea:focus {
       </div>
     </div>
 
+    <!-- 目標到達プロジェクション -->
+    <div class="card">
+      <h2>目標60.0kg 到達予測</h2>
+      <div id="projectionContent" style="font-size:12px;line-height:1.6;color:var(--text-main);">集計中...</div>
+    </div>
+
+    <!-- 週間サマリーレビュー -->
+    <div class="card">
+      <h2>週間サマリーレビュー</h2>
+      <div id="weeklyCardsContainer">集計中...</div>
+    </div>
+
+    <!-- 昼食タイプ別の傾向分析 -->
+    <div class="card">
+      <h2>昼食タイプ別の傾向 (翌朝体重)</h2>
+      <div id="lunchImpactList" style="font-size:12px;line-height:1.8;color:var(--text-main);">集計中...</div>
+    </div>
+
+    <!-- ラン効果の可視化 -->
+    <div class="card">
+      <h2>ラン実施の翌朝効果</h2>
+      <div id="runImpactContent" style="font-size:12px;line-height:1.8;color:var(--text-main);">集計中...</div>
+    </div>
+
+    <!-- ノイズ要因の上振れ影響度 -->
+    <div class="card">
+      <h2>ノイズ要因の上振れ影響度</h2>
+      <div id="noiseImpactList" style="font-size:12px;line-height:1.8;color:var(--text-main);">集計中...</div>
+    </div>
+
+    <!-- 間食タイミング比率 -->
+    <div class="card">
+      <h2>間食タイミング比率</h2>
+      <div id="snackTimingList" style="font-size:12px;line-height:1.8;color:var(--text-main);">集計中...</div>
+    </div>
+
+    <!-- 端末データ管理（最下部に配置） -->
     <div class="card">
       <h2>端末データ管理 (バックアップ・復元)</h2>
       <p style="font-size:11px;color:var(--text-sub);margin:0 0 8px;">スマホの機種変更時や定期バックアップに利用できます。</p>
@@ -388,21 +428,6 @@ input:focus, select:focus, textarea:focus {
         <button type="button" class="btn-save-sub" style="margin:0;font-size:11px;" onclick="$('importFileInput').click()">データ復元 (インポート)</button>
       </div>
       <input type="file" id="importFileInput" class="hidden" accept=".json" onchange="importBackupJSON(event)">
-    </div>
-
-    <div class="card">
-      <h2>週間サマリーレビュー</h2>
-      <div id="weeklyCardsContainer">集計中...</div>
-    </div>
-
-    <div class="card">
-      <h2>ノイズ要因の上振れ影響度</h2>
-      <div id="noiseImpactList" style="font-size:12px;line-height:1.8;color:var(--text-main);">集計中...</div>
-    </div>
-
-    <div class="card">
-      <h2>間食タイミング比率</h2>
-      <div id="snackTimingList" style="font-size:12px;line-height:1.8;color:var(--text-main);">集計中...</div>
     </div>
   </div>
 
@@ -413,7 +438,7 @@ input:focus, select:focus, textarea:focus {
       <div id="summaryContainer"></div>
     </div>
     <div class="card">
-      <h2>過去ログ一覧</h2>
+      <h2>過去ログ一覧 (昨日以前)</h2>
       <div id="historyContainer"></div>
     </div>
   </div>
@@ -627,6 +652,69 @@ input:focus, select:focus, textarea:focus {
     b.innerHTML = lines.join('<br>');
   }
 
+  function renderTodayCard(targetDate) {
+    var raw = getSafeData();
+    var r = raw[targetDate];
+    var c = $('todayCardContent');
+    if (!r || !r.weight) {
+      c.innerHTML = '<div style="color:var(--text-sub);padding:4px 0;">まだこの日の記録はありません。上のフォームから入力して保存してください。</div>';
+      return;
+    }
+    var burn = 0;
+    if (r.run && r.runKm) burn += Math.round(r.weight * r.runKm);
+    if (r.muscleUpper || r.muscle) burn += 100;
+    if (r.muscleLower) burn += 100;
+    if (r.stretch) burn += 30;
+    var eat = 0;
+    if (Array.isArray(r.snacks)) {
+      r.snacks.forEach(function(s) { eat += (parseInt(s.cal) || 0); });
+    }
+    var net = eat - burn;
+    var balHtml = net <= 0 ? 
+      '<div class="bal-box bal-good">間食' + eat + ' - 消費' + burn + ' = ' + net + 'kcal</div>' : 
+      '<div class="bal-box bal-over">間食' + eat + ' - 消費' + burn + ' = +' + net + 'kcal</div>';
+
+    var ex = [];
+    if (r.run) ex.push('ラン' + r.runKm + 'km');
+    if (r.muscleUpper || r.muscle) ex.push('筋(上)');
+    if (r.muscleLower) ex.push('筋(下)');
+    if (r.stretch) ex.push('ストレッチ');
+    
+    var lTxt = getL(r.lunchType || r.lunch || '', r.lunchCount, r.lunchMemo);
+    if (r.lunchType2) lTxt += ' ＋ ' + getL(r.lunchType2, r.lunchCount2, r.lunchMemo2);
+    
+    var tm = { 'morning': '朝', 'noon': '昼', 'evening': '夕方', 'before_dinner': '夕食前', 'after_dinner': '夕食後' };
+    var sTxt = (Array.isArray(r.snacks) && r.snacks.length) ? r.snacks.map(function(s) {
+      return (tm[s.time] || '') + ' ' + s.content + '(' + (s.cal ? s.cal + 'kcal' : '') + ')';
+    }).join(', ') : 'なし';
+    
+    var tgs = [];
+    if (r.holiday) tgs.push("休日");
+    if (r.lunchOut) tgs.push("昼外食");
+    if (r.dinnerOut) tgs.push("夜外食");
+    if (r.alcohol) tgs.push("飲酒");
+    if (r.salty) tgs.push("塩分多め");
+    if (r.noBM) tgs.push("便通なし");
+    if (r.workStress) tgs.push("残業/ストレス");
+    if (r.musclePain) tgs.push("筋肉痛/疲労");
+
+    var famTags = [];
+    if (r.famWife) famTags.push("妻");
+    if (r.famSon) famTags.push("息子");
+    var famHtml = '';
+    if (famTags.length || r.familyMemo) {
+      famHtml = '<div class="family-log-box"><b>家族' + (famTags.length ? ' [' + famTags.join('・') + ']' : '') + ':</b> ' + (r.familyMemo || '（記録あり）') + '</div>';
+    }
+
+    var moodLabel = md[r.mood] || r.mood || '';
+    var moodTxt = moodLabel ? '<span style="display:inline-block;width:18px;text-align:center;font-weight:bold;margin-right:4px;color:#0288d1;">' + moodLabel + '</span>' : '';
+
+    c.innerHTML = '<div style="display:flex;align-items:center;margin-bottom:4px;">' + moodTxt + '<span style="font-weight:bold;color:var(--text-main);font-size:15px;">' + targetDate + ' : ' + r.weight + 'kg</span></div>' +
+      balHtml +
+      '<div style="color:var(--text-sub);line-height:1.5;margin-top:6px;font-size:12px;">運動: ' + (ex.length ? ex.join(', ') : 'なし') + ' | 昼食: ' + lTxt + '<br>間食: ' + sTxt + '<br>要因: ' + (tgs.length ? tgs.join('・') : 'なし') + (r.memo ? '<br>日記: ' + r.memo : '') + '</div>' +
+      famHtml;
+  }
+
   function loadDataForDate() {
     var d = $('dateInput').value;
     if (!d) return;
@@ -679,7 +767,6 @@ input:focus, select:focus, textarea:focus {
     $('tagMusclePain').checked = rd.musclePain || false;
     $('memoInput').value = rd.memo || '';
 
-    // 今日の家族の復元
     $('famWife').checked = rd.famWife || false;
     $('famSon').checked = rd.famSon || false;
     $('familyMemoInput').value = rd.familyMemo || '';
@@ -687,6 +774,8 @@ input:focus, select:focus, textarea:focus {
     $('exRun').dispatchEvent(new Event('change'));
     $('feedbackBanner').classList.add('hidden');
     $('quickSaveToast').innerText = '';
+
+    renderTodayCard(d);
   }
   
   $('dateInput').addEventListener('change', loadDataForDate);
@@ -739,6 +828,7 @@ input:focus, select:focus, textarea:focus {
     
     updateKpiHeader();
     updateHistoryList();
+    renderTodayCard(d);
 
     if (isFinalAnalyze) {
       showMultiFeedback(d, newData);
@@ -761,9 +851,37 @@ input:focus, select:focus, textarea:focus {
     var dates = Object.keys(raw).sort();
     if (!dates.length) return;
 
+    // 1. 到達予測プロジェクション
+    var today = new Date();
+    var w2Start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 14);
+    var d2wStr = fmtDate(w2Start);
+    var curW = raw[dates[dates.length - 1]].weight;
+    var w2w = raw[d2wStr] ? raw[d2wStr].weight : null;
+    var projHtml = '';
+    if (curW && w2w) {
+      var diff14 = curW - w2w;
+      var pacePerWeek = diff14 / 2; // 1週間あたりの変化量
+      if (curW <= TARGET_WEIGHT) {
+        projHtml = '🎉 <b>すでに目標体重（' + TARGET_WEIGHT + 'kg未満）を達成しています！</b>';
+      } else if (pacePerWeek < -0.05) {
+        var remainKg = curW - TARGET_WEIGHT;
+        var weeksNeeded = Math.ceil(remainKg / Math.abs(pacePerWeek));
+        var targetDate = new Date();
+        targetDate.setDate(targetDate.getDate() + (weeksNeeded * 7));
+        projHtml = '直近2週間のペース: <b>' + pacePerWeek.toFixed(2) + ' kg/週</b><br>' +
+          '目標60.0kg到達の目安: <b>' + (targetDate.getMonth()+1) + '月' + (targetDate.getDate() < 11 ? '上旬' : targetDate.getDate() < 21 ? '中旬' : '下旬') + '頃</b> (残り約' + weeksNeeded + '週間)';
+      } else {
+        projHtml = '直近2週間のペース: <b>' + (pacePerWeek >= 0 ? '+' : '') + pacePerWeek.toFixed(2) + ' kg/週</b><br>' +
+          '<span style="color:#c62828;">現状維持・微増傾向のため、間食コントロールか運動量の見直しが必要です。</span>';
+      }
+    } else {
+      projHtml = '直近2週間分のデータが蓄積されると、60.0kg到達日の自動予測が表示されます。';
+    }
+    $('projectionContent').innerHTML = projHtml;
+
+    // 2. 週間サマリーレビュー
     var container = $('weeklyCardsContainer');
     container.innerHTML = '';
-    var today = new Date();
     var foundAny = false;
     for (var w = 0; w < 4; w++) {
       var wEnd = new Date(today.getFullYear(), today.getMonth(), today.getDate() - (w * 7));
@@ -812,6 +930,59 @@ input:focus, select:focus, textarea:focus {
     }
     if (!foundAny) container.innerHTML = 'データなし';
 
+    // 3. 昼食タイプ別の傾向
+    var lunchTypes = [
+      { id: 'bento', label: '弁当(持参)' },
+      { id: 'onigiri_low', label: 'おにぎり(低脂質)' },
+      { id: 'onigiri_high', label: 'おにぎり(高脂質)' },
+      { id: 'bread', label: 'パン' }
+    ];
+    var lHtml = '';
+    lunchTypes.forEach(function(lt) {
+      var diffSum = 0, count = 0;
+      dates.forEach(function(d) {
+        var r = raw[d];
+        if (r && (r.lunchType === lt.id || r.lunch === lt.id)) {
+          var dParts = d.split('-');
+          var nextD = new Date(parseInt(dParts[0],10), parseInt(dParts[1],10)-1, parseInt(dParts[2],10));
+          nextD.setDate(nextD.getDate() + 1);
+          var nextR = raw[fmtDate(nextD)];
+          if (nextR && nextR.weight && r.weight) {
+            diffSum += (nextR.weight - r.weight);
+            count++;
+          }
+        }
+      });
+      if (count > 0) {
+        var avg = Math.round((diffSum / count) * 10) / 10;
+        lHtml += '・<b>' + lt.label + '</b>: 翌朝平均 <span style="color:' + (avg<=0?'#2e7d32':'#c62828') + ';">' + (avg>0?'+':'') + avg + 'kg</span> (' + count + '回)<br>';
+      } else {
+        lHtml += '・<b>' + lt.label + '</b>: 記録なし<br>';
+      }
+    });
+    $('lunchImpactList').innerHTML = lHtml;
+
+    // 4. ラン効果の可視化
+    var runDiffSum = 0, runCount = 0;
+    var restDiffSum = 0, restCount = 0;
+    dates.forEach(function(d) {
+      var r = raw[d];
+      var dParts = d.split('-');
+      var nextD = new Date(parseInt(dParts[0],10), parseInt(dParts[1],10)-1, parseInt(dParts[2],10));
+      nextD.setDate(nextD.getDate() + 1);
+      var nextR = raw[fmtDate(nextD)];
+      if (r && nextR && r.weight && nextR.weight) {
+        var diff = nextR.weight - r.weight;
+        if (r.run && r.runKm > 0) { runDiffSum += diff; runCount++; }
+        else { restDiffSum += diff; restCount++; }
+      }
+    });
+    var runAvg = runCount > 0 ? (Math.round((runDiffSum / runCount) * 10) / 10) : null;
+    var restAvg = restCount > 0 ? (Math.round((restDiffSum / restCount) * 10) / 10) : null;
+    $('runImpactContent').innerHTML = '・<b>ラン実施日</b>の翌朝: 平均 <span style="color:' + ((runAvg||0)<=0?'#2e7d32':'#c62828') + ';">' + (runAvg!==null?(runAvg>0?'+':'')+runAvg+'kg':'-') + '</span> (' + runCount + '日)<br>' +
+      '・<b>ランオフ日</b>の翌朝: 平均 <span style="color:' + ((restAvg||0)<=0?'#2e7d32':'#c62828') + ';">' + (restAvg!==null?(restAvg>0?'+':'')+restAvg+'kg':'-') + '</span> (' + restCount + '日)';
+
+    // 5. ノイズ要因の影響度
     var noiseTags = [
       { id: 'dinnerOut', label: '夜外食' },
       { id: 'alcohol', label: '飲酒' },
@@ -836,13 +1007,14 @@ input:focus, select:focus, textarea:focus {
       });
       if (count > 0) {
         var avg = Math.round((diffSum / count) * 10) / 10;
-        noiseHtml += '・<b>' + tag.label + '</b>: 翌朝平均 <span style="color:' + (avg>=0?'#c62828':'#2e7d32') + ';">' + (avg>0?'+':'') + avg + 'kg</span> (' + count + '回記録)<br>';
+        noiseHtml += '・<b>' + tag.label + '</b>: 翌朝平均 <span style="color:' + (avg>=0?'#c62828':'#2e7d32') + ';">' + (avg>0?'+':'') + avg + 'kg</span> (' + count + '回)<br>';
       } else {
         noiseHtml += '・<b>' + tag.label + '</b>: データ蓄積中<br>';
       }
     });
     $('noiseImpactList').innerHTML = noiseHtml;
 
+    // 6. 間食タイミング比率
     var timeMap = { 'morning': 0, 'noon': 0, 'evening': 0, 'before_dinner': 0, 'after_dinner': 0 };
     var timeLabels = { 'morning': '朝', 'noon': '昼', 'evening': '夕方', 'before_dinner': '夕食前', 'after_dinner': '夕食後' };
     var totalSnackCal = 0;
@@ -918,11 +1090,17 @@ input:focus, select:focus, textarea:focus {
       '<div style="font-size:11px;color:var(--text-sub);font-weight:600;margin-top:6px;">今月の正味カロリー: ' + (mNet > 0 ? '+' : '') + mNet + 'kcal</div>' +
       '<div style="font-size:13px;margin-top:2px;">' + fatHtml + '</div></div>';
 
+    // 全履歴タブには「今日以前」の過去ログのみを表示
+    var todayStr = fmtDate(today);
     var html = '';
     var tm = { 'morning': '朝', 'noon': '昼', 'evening': '夕方', 'before_dinner': '夕食前', 'after_dinner': '夕食後' };
+    var countPast = 0;
+
     dates.forEach(function(d) {
+      if (d === todayStr) return; // 今日の分は全履歴から除外し、入力画面に専任
       var r = raw[d];
       if (!r || !r.weight) return;
+      countPast++;
       var burn = 0;
       if (r.run && r.runKm) burn += Math.round(r.weight * r.runKm);
       if (r.muscleUpper || r.muscle) burn += 100;
@@ -978,7 +1156,7 @@ input:focus, select:focus, textarea:focus {
         famHtml +
         '</div>';
     });
-    $('historyContainer').innerHTML = html;
+    $('historyContainer').innerHTML = countPast > 0 ? html : '<div style="color:var(--text-sub);padding:8px 0;font-size:12px;">過去の履歴はまだありません。</div>';
   }
 
   function getCSVData() {
