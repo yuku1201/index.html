@@ -20,6 +20,7 @@
   --tag-green-bg: #edf7ed; --tag-green-text: #2e7d32;
   --tag-red-bg: #fdeeee; --tag-red-text: #c62828;
   --tag-blue-bg: #e8f4fd; --tag-blue-text: #0288d1;
+  --tag-purple-bg: #f5eef5; --tag-purple-text: #6b3565;
   --tag-gray-bg: #f1f1ef; --tag-gray-text: #5a5a58;
 }
 
@@ -169,6 +170,17 @@ input:focus, select:focus, textarea:focus {
   background: var(--tag-blue-bg); color: var(--tag-blue-text); border-color: #b3e5fc; font-weight: 600;
 }
 
+/* 今日の家族用タグ */
+.family-group { display: flex; gap: 6px; margin-bottom: 6px; }
+.family-group label {
+  background: var(--tag-gray-bg); padding: 6px 14px; border-radius: 6px;
+  font-size: 12px; font-weight: 600; color: var(--text-main); cursor: pointer; border: 1px solid transparent;
+}
+.family-group input { display: none; }
+.family-group label:has(input:checked) {
+  background: var(--tag-purple-bg); color: var(--tag-purple-text); border-color: #e1bee7;
+}
+
 .snack-item {
   background: #fafafa; border: 1px solid var(--border-light);
   border-radius: 6px; padding: 8px; margin-bottom: 6px;
@@ -221,6 +233,17 @@ input:focus, select:focus, textarea:focus {
 .bal-box { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
 .bal-good { background: var(--tag-green-bg); color: var(--tag-green-text); }
 .bal-over { background: var(--tag-red-bg); color: var(--tag-red-text); }
+
+/* 家族ログの引用ブロック風スタイル */
+.family-log-box {
+  background: #fafaf9;
+  border-left: 3px solid #ab47bc;
+  padding: 6px 10px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-main);
+  border-radius: 0 4px 4px 0;
+}
 
 .prog-bg { background: var(--border-light); border-radius: 4px; height: 6px; width: 100%; margin: 6px 0; overflow: hidden; }
 .prog-bar { background: var(--primary); height: 100%; }
@@ -326,6 +349,14 @@ input:focus, select:focus, textarea:focus {
       <label>今日の一言日記 (気づき・生活)</label>
       <textarea id="memoInput" rows="2" placeholder="走った感覚、体調、食事の気づきなど"></textarea>
 
+      <!-- 今日の家族欄 -->
+      <label>今日の家族 (日常の一コマ・言動)</label>
+      <div class="family-group">
+        <label><input type="checkbox" id="famWife"><span>妻</span></label>
+        <label><input type="checkbox" id="famSon"><span>息子</span></label>
+      </div>
+      <input type="text" id="familyMemoInput" placeholder="息子の口癖・ブーム、妻との会話など">
+
       <button type="button" class="btn-save-sub" onclick="saveData(false)">記録を更新 (都度保存)</button>
       <div id="quickSaveToast"></div>
       <button type="button" class="btn-save-main" onclick="saveData(true)">本日の記録を完了して総合分析</button>
@@ -349,7 +380,6 @@ input:focus, select:focus, textarea:focus {
       </div>
     </div>
 
-    <!-- 端末データ管理（消失防止用） -->
     <div class="card">
       <h2>端末データ管理 (バックアップ・復元)</h2>
       <p style="font-size:11px;color:var(--text-sub);margin:0 0 8px;">スマホの機種変更時や定期バックアップに利用できます。</p>
@@ -648,6 +678,12 @@ input:focus, select:focus, textarea:focus {
     $('tagWorkStress').checked = rd.workStress || false;
     $('tagMusclePain').checked = rd.musclePain || false;
     $('memoInput').value = rd.memo || '';
+
+    // 今日の家族の復元
+    $('famWife').checked = rd.famWife || false;
+    $('famSon').checked = rd.famSon || false;
+    $('familyMemoInput').value = rd.familyMemo || '';
+
     $('exRun').dispatchEvent(new Event('change'));
     $('feedbackBanner').classList.add('hidden');
     $('quickSaveToast').innerText = '';
@@ -693,7 +729,10 @@ input:focus, select:focus, textarea:focus {
       noBM: $('tagNoBM').checked,
       workStress: $('tagWorkStress').checked,
       musclePain: $('tagMusclePain').checked,
-      memo: $('memoInput').value
+      memo: $('memoInput').value,
+      famWife: $('famWife').checked,
+      famSon: $('famSon').checked,
+      familyMemo: $('familyMemoInput').value
     };
     data[d] = Object.assign(data[d] || {}, newData);
     localStorage.setItem('myHealthData', JSON.stringify(data));
@@ -921,13 +960,23 @@ input:focus, select:focus, textarea:focus {
       if (r.workStress) tgs.push("残業/ストレス");
       if (r.musclePain) tgs.push("筋肉痛/疲労");
 
+      var famTags = [];
+      if (r.famWife) famTags.push("妻");
+      if (r.famSon) famTags.push("息子");
+      var famHtml = '';
+      if (famTags.length || r.familyMemo) {
+        famHtml = '<div class="family-log-box"><b>家族' + (famTags.length ? ' [' + famTags.join('・') + ']' : '') + ':</b> ' + (r.familyMemo || '（記録あり）') + '</div>';
+      }
+
       var moodLabel = md[r.mood] || r.mood || '';
       var moodTxt = moodLabel ? '<span style="display:inline-block;width:18px;text-align:center;font-weight:bold;margin-right:4px;color:#0288d1;">' + moodLabel + '</span>' : '';
 
       html += '<div style="border-bottom:1px solid var(--border-light);padding:10px 0;">' +
         '<div style="display:flex;align-items:center;margin-bottom:4px;">' + moodTxt + '<span style="font-weight:bold;color:var(--text-main);font-size:14px;">' + d + ' : ' + r.weight + 'kg</span></div>' +
         balHtml +
-        '<div style="color:var(--text-sub);line-height:1.5;margin-top:6px;font-size:12px;">運動: ' + (ex.length ? ex.join(', ') : 'なし') + ' | 昼食: ' + lTxt + '<br>間食: ' + sTxt + '<br>要因: ' + (tgs.length ? tgs.join('・') : 'なし') + (r.memo ? '<br>日記: ' + r.memo : '') + '</div></div>';
+        '<div style="color:var(--text-sub);line-height:1.5;margin-top:6px;font-size:12px;">運動: ' + (ex.length ? ex.join(', ') : 'なし') + ' | 昼食: ' + lTxt + '<br>間食: ' + sTxt + '<br>要因: ' + (tgs.length ? tgs.join('・') : 'なし') + (r.memo ? '<br>日記: ' + r.memo : '') + '</div>' +
+        famHtml +
+        '</div>';
     });
     $('historyContainer').innerHTML = html;
   }
@@ -936,7 +985,7 @@ input:focus, select:focus, textarea:focus {
     var raw = getSafeData();
     var dates = Object.keys(raw).sort();
     if (!dates.length) return null;
-    var csv = "日付(曜日),平日/休日,調子,体重,運動,運動消費(kcal),昼食,間食,間食摂取(kcal),差分(間食-消費kcal),外食飲酒等,体調・疲労,一言日記\n";
+    var csv = "日付(曜日),平日/休日,調子,体重,運動,運動消費(kcal),昼食,間食,間食摂取(kcal),差分(間食-消費kcal),外食飲酒等,体調・疲労,一言日記,家族対象,家族メモ\n";
     var tm = { 'morning': '朝', 'noon': '昼', 'evening': '夕方', 'before_dinner': '夕食前', 'after_dinner': '夕食後' };
     var dw = ['日', '月', '火', '水', '木', '金', '土'];
     dates.forEach(function(d) {
@@ -965,7 +1014,12 @@ input:focus, select:focus, textarea:focus {
       var cond = [];
       if (r.noBM) cond.push("便通なし"); if (r.workStress) cond.push("残業/ストレス"); if (r.musclePain) cond.push("筋肉痛/疲労");
       var moodLabel = md[r.mood] || r.mood || '';
-      csv += d + '(' + dayStr + '),' + (r.holiday ? '休日' : '平日') + ',' + moodLabel + ',' + r.weight + ',' + (ex.length ? ex.join('+') : '休') + ',' + burn + ',' + lTxt + ',' + sTxt + ',' + eat + ',' + (eat - burn) + ',' + (tgs.length ? tgs.join('・') : '無') + ',' + (cond.length ? cond.join('・') : '通常') + ',' + (r.memo || '') + '\n';
+      
+      var famTags = [];
+      if (r.famWife) famTags.push("妻");
+      if (r.famSon) famTags.push("息子");
+
+      csv += d + '(' + dayStr + '),' + (r.holiday ? '休日' : '平日') + ',' + moodLabel + ',' + r.weight + ',' + (ex.length ? ex.join('+') : '休') + ',' + burn + ',' + lTxt + ',' + sTxt + ',' + eat + ',' + (eat - burn) + ',' + (tgs.length ? tgs.join('・') : '無') + ',' + (cond.length ? cond.join('・') : '通常') + ',' + (r.memo ? '"' + r.memo.replace(/"/g, '""') + '"' : '') + ',' + (famTags.length ? famTags.join('・') : '') + ',' + (r.familyMemo ? '"' + r.familyMemo.replace(/"/g, '""') + '"' : '') + '\n';
     });
     return csv;
   }
