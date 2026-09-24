@@ -170,25 +170,15 @@ input:focus, select:focus, textarea:focus {
   background: var(--tag-blue-bg); color: var(--tag-blue-text); border-color: #b3e5fc; font-weight: 600;
 }
 
-.family-group { display: flex; gap: 6px; margin-bottom: 6px; }
-.family-group label {
-  background: var(--tag-gray-bg); padding: 6px 14px; border-radius: 6px;
-  font-size: 12px; font-weight: 600; color: var(--text-main); cursor: pointer; border: 1px solid transparent;
-}
-.family-group input { display: none; }
-.family-group label:has(input:checked) {
-  background: var(--tag-purple-bg); color: var(--tag-purple-text); border-color: #e1bee7;
-}
-
-.snack-item {
+.item-box {
   background: #fafafa; border: 1px solid var(--border-light);
   border-radius: 6px; padding: 8px; margin-bottom: 6px;
 }
-.btn-remove-snack {
+.btn-remove-item {
   background: transparent; color: #e53935; border: 1px solid #ffcdd2;
   border-radius: 4px; font-weight: bold; cursor: pointer; padding: 0;
 }
-.btn-add-snack {
+.btn-add-item {
   background: transparent; color: var(--text-sub); border: 1px dashed var(--border);
   padding: 8px; border-radius: 6px; cursor: pointer; width: 100%;
   font-size: 12px; font-weight: 500; margin-bottom: 6px;
@@ -326,11 +316,11 @@ input:focus, select:focus, textarea:focus {
         <select id="lunchSelect2"><option value="">-- 追加なし --</option><option value="bento">弁当(持参)</option><option value="onigiri_low">おにぎり(低脂質)</option><option value="onigiri_high">おにぎり(高脂質)</option><option value="bread">パン</option><option value="other">その他</option></select>
         <input type="number" id="lunchCount2" min="0" placeholder="個数"><input type="text" id="lunchMemo2" class="hidden" placeholder="内容">
       </div>
-      <button type="button" id="btnAddLunch" class="btn-add-snack" style="padding:4px;font-size:11px;">＋ 昼食の組み合わせを追加</button>
+      <button type="button" id="btnAddLunch" class="btn-add-item" style="padding:4px;font-size:11px;">＋ 昼食の組み合わせを追加</button>
 
       <label>間食</label>
       <div id="snackContainer"></div>
-      <button type="button" class="btn-add-snack" onclick="addSnackRow()">＋ 間食を追加</button>
+      <button type="button" class="btn-add-item" onclick="addSnackRow()">＋ 間食を追加</button>
 
       <label>変動要因 (ノイズの記録)</label>
       <div class="checkbox-group grid">
@@ -347,19 +337,17 @@ input:focus, select:focus, textarea:focus {
       <label>今日の一言日記 (気づき・生活)</label>
       <textarea id="memoInput" rows="2" placeholder="走った感覚、体調、食事の気づきなど"></textarea>
 
-      <label>今日の家族 (日常の一コマ・言動)</label>
-      <div class="family-group">
-        <label><input type="checkbox" id="famWife"><span>妻</span></label>
-        <label><input type="checkbox" id="famSon"><span>息子</span></label>
-      </div>
-      <input type="text" id="familyMemoInput" placeholder="息子の口癖・ブーム、妻との会話など">
+      <!-- 今日の家族（複数追加可能） -->
+      <label>今日の家族 (ちさよ・けいごの日常ログ)</label>
+      <div id="familyContainer"></div>
+      <button type="button" class="btn-add-item" onclick="addFamilyRow()">＋ 家族の記録を追加</button>
 
       <button type="button" class="btn-save-sub" onclick="saveData(false)">記録を更新 (都度保存)</button>
       <div id="quickSaveToast"></div>
       <button type="button" class="btn-save-main" onclick="saveData(true)">本日の記録を完了して総合分析</button>
     </div>
 
-    <!-- 本日の記録サマリーカード（入力画面内） -->
+    <!-- 本日の記録サマリーカード -->
     <div class="card" id="todayCardWrapper">
       <h2>選択中の日の記録サマリー</h2>
       <div id="todayCardContent" style="color:var(--text-sub);font-size:12px;">データ読み込み中...</div>
@@ -383,43 +371,36 @@ input:focus, select:focus, textarea:focus {
       </div>
     </div>
 
-    <!-- 目標到達プロジェクション -->
     <div class="card">
       <h2>目標60.0kg 到達予測</h2>
       <div id="projectionContent" style="font-size:12px;line-height:1.6;color:var(--text-main);">集計中...</div>
     </div>
 
-    <!-- 週間サマリーレビュー -->
     <div class="card">
       <h2>週間サマリーレビュー</h2>
       <div id="weeklyCardsContainer">集計中...</div>
     </div>
 
-    <!-- 昼食タイプ別の傾向分析 -->
     <div class="card">
       <h2>昼食タイプ別の傾向 (翌朝体重)</h2>
       <div id="lunchImpactList" style="font-size:12px;line-height:1.8;color:var(--text-main);">集計中...</div>
     </div>
 
-    <!-- ラン効果の可視化 -->
     <div class="card">
       <h2>ラン実施の翌朝効果</h2>
       <div id="runImpactContent" style="font-size:12px;line-height:1.8;color:var(--text-main);">集計中...</div>
     </div>
 
-    <!-- ノイズ要因の上振れ影響度 -->
     <div class="card">
       <h2>ノイズ要因の上振れ影響度</h2>
       <div id="noiseImpactList" style="font-size:12px;line-height:1.8;color:var(--text-main);">集計中...</div>
     </div>
 
-    <!-- 間食タイミング比率 -->
     <div class="card">
       <h2>間食タイミング比率</h2>
       <div id="snackTimingList" style="font-size:12px;line-height:1.8;color:var(--text-main);">集計中...</div>
     </div>
 
-    <!-- 端末データ管理（最下部に配置） -->
     <div class="card">
       <h2>端末データ管理 (バックアップ・復元)</h2>
       <p style="font-size:11px;color:var(--text-sub);margin:0 0 8px;">スマホの機種変更時や定期バックアップに利用できます。</p>
@@ -460,6 +441,7 @@ input:focus, select:focus, textarea:focus {
   var $ = function(id) { return document.getElementById(id); };
   var lm = {'bento':'弁当','onigiri_low':'おにぎり(低)','onigiri_high':'おにぎり(高)','bread':'パン','other':'その他'};
   var md = {'great':'◎','good':'○','soso':'△','bad':'✕'};
+  var fm = {'chisayo':'ちさよ','keigo':'けいご','all':'家族全員'};
 
   var container = $('swipeContainer');
   container.addEventListener('scroll', function() {
@@ -522,7 +504,7 @@ input:focus, select:focus, textarea:focus {
   function addSnackRow(time, cal, content) {
     time = time || ''; cal = cal || ''; content = content || '';
     var div = document.createElement('div');
-    div.className = 'snack-item';
+    div.className = 'item-box';
     div.innerHTML = '<div class="row" style="margin-bottom:4px;">' +
       '<select class="snack-time" style="flex:2;">' +
       '<option value="">タイミング</option>' +
@@ -533,10 +515,28 @@ input:focus, select:focus, textarea:focus {
       '<option value="after_dinner"' + (time === 'after_dinner' ? ' selected' : '') + '>夕食後</option>' +
       '</select>' +
       '<input type="number" class="snack-cal" style="flex:2;" min="0" placeholder="kcal" value="' + cal + '">' +
-      '<button type="button" class="btn-remove-snack" style="flex:0.6;" onclick="this.parentElement.parentElement.remove()">&times;</button>' +
+      '<button type="button" class="btn-remove-item" style="flex:0.6;" onclick="this.parentElement.parentElement.remove()">&times;</button>' +
       '</div>' +
       '<input type="text" class="snack-content" placeholder="内容 (例: 甘栗、小魚)" value="' + content + '">';
     $('snackContainer').appendChild(div);
+  }
+
+  // 今日の家族（動的追加）
+  function addFamilyRow(who, text) {
+    who = who || 'keigo';
+    text = text || '';
+    var div = document.createElement('div');
+    div.className = 'item-box';
+    div.innerHTML = '<div class="row" style="margin-bottom:0;">' +
+      '<select class="family-who" style="flex:1.4;">' +
+      '<option value="keigo"' + (who === 'keigo' ? ' selected' : '') + '>けいご</option>' +
+      '<option value="chisayo"' + (who === 'chisayo' ? ' selected' : '') + '>ちさよ</option>' +
+      '<option value="all"' + (who === 'all' ? ' selected' : '') + '>家族全員</option>' +
+      '</select>' +
+      '<input type="text" class="family-text" style="flex:3.5;" placeholder="口癖・ブーム、会話など" value="' + text + '">' +
+      '<button type="button" class="btn-remove-item" style="flex:0.6;" onclick="this.parentElement.parentElement.remove()">&times;</button>' +
+      '</div>';
+    $('familyContainer').appendChild(div);
   }
 
   function getSafeData() {
@@ -698,12 +698,15 @@ input:focus, select:focus, textarea:focus {
     if (r.workStress) tgs.push("残業/ストレス");
     if (r.musclePain) tgs.push("筋肉痛/疲労");
 
-    var famTags = [];
-    if (r.famWife) famTags.push("妻");
-    if (r.famSon) famTags.push("息子");
     var famHtml = '';
-    if (famTags.length || r.familyMemo) {
-      famHtml = '<div class="family-log-box"><b>家族' + (famTags.length ? ' [' + famTags.join('・') + ']' : '') + ':</b> ' + (r.familyMemo || '（記録あり）') + '</div>';
+    if (Array.isArray(r.familyLogs) && r.familyLogs.length) {
+      var lines = r.familyLogs.map(function(f) {
+        return '・<b>' + (fm[f.who] || f.who) + ':</b> ' + f.text;
+      });
+      famHtml = '<div class="family-log-box">' + lines.join('<br>') + '</div>';
+    } else if (r.familyMemo) {
+      // 過去データの互換表示
+      famHtml = '<div class="family-log-box"><b>家族:</b> ' + r.familyMemo + '</div>';
     }
 
     var moodLabel = md[r.mood] || r.mood || '';
@@ -767,9 +770,14 @@ input:focus, select:focus, textarea:focus {
     $('tagMusclePain').checked = rd.musclePain || false;
     $('memoInput').value = rd.memo || '';
 
-    $('famWife').checked = rd.famWife || false;
-    $('famSon').checked = rd.famSon || false;
-    $('familyMemoInput').value = rd.familyMemo || '';
+    // 今日の家族ログの復元
+    $('familyContainer').innerHTML = '';
+    if (Array.isArray(rd.familyLogs)) {
+      rd.familyLogs.forEach(function(f) { addFamilyRow(f.who, f.text); });
+    } else if (rd.familyMemo) {
+      // 旧バージョンのメモがあれば引き継ぎ
+      addFamilyRow(rd.famWife ? 'chisayo' : 'keigo', rd.familyMemo);
+    }
 
     $('exRun').dispatchEvent(new Event('change'));
     $('feedbackBanner').classList.add('hidden');
@@ -785,12 +793,20 @@ input:focus, select:focus, textarea:focus {
     var w = $('weightInput').value;
     if (!d || !w) return alert('日付と体重は必須です');
     var snacks = [];
-    document.querySelectorAll('.snack-item').forEach(function(i) {
+    document.querySelectorAll('#snackContainer .item-box').forEach(function(i) {
       var t = i.querySelector('.snack-time').value;
       var c = i.querySelector('.snack-cal').value;
       var txt = i.querySelector('.snack-content').value;
       if (t || c || txt) snacks.push({ time: t, cal: c ? parseInt(c) : 0, content: txt });
     });
+
+    var familyLogs = [];
+    document.querySelectorAll('#familyContainer .item-box').forEach(function(i) {
+      var who = i.querySelector('.family-who').value;
+      var text = i.querySelector('.family-text').value.trim();
+      if (text) familyLogs.push({ who: who, text: text });
+    });
+
     var moodEl = document.querySelector('input[name="mood"]:checked');
     var moodVal = moodEl ? moodEl.value : '';
 
@@ -819,9 +835,7 @@ input:focus, select:focus, textarea:focus {
       workStress: $('tagWorkStress').checked,
       musclePain: $('tagMusclePain').checked,
       memo: $('memoInput').value,
-      famWife: $('famWife').checked,
-      famSon: $('famSon').checked,
-      familyMemo: $('familyMemoInput').value
+      familyLogs: familyLogs
     };
     data[d] = Object.assign(data[d] || {}, newData);
     localStorage.setItem('myHealthData', JSON.stringify(data));
@@ -851,7 +865,6 @@ input:focus, select:focus, textarea:focus {
     var dates = Object.keys(raw).sort();
     if (!dates.length) return;
 
-    // 1. 到達予測プロジェクション
     var today = new Date();
     var w2Start = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 14);
     var d2wStr = fmtDate(w2Start);
@@ -860,7 +873,7 @@ input:focus, select:focus, textarea:focus {
     var projHtml = '';
     if (curW && w2w) {
       var diff14 = curW - w2w;
-      var pacePerWeek = diff14 / 2; // 1週間あたりの変化量
+      var pacePerWeek = diff14 / 2;
       if (curW <= TARGET_WEIGHT) {
         projHtml = '🎉 <b>すでに目標体重（' + TARGET_WEIGHT + 'kg未満）を達成しています！</b>';
       } else if (pacePerWeek < -0.05) {
@@ -879,7 +892,6 @@ input:focus, select:focus, textarea:focus {
     }
     $('projectionContent').innerHTML = projHtml;
 
-    // 2. 週間サマリーレビュー
     var container = $('weeklyCardsContainer');
     container.innerHTML = '';
     var foundAny = false;
@@ -930,7 +942,6 @@ input:focus, select:focus, textarea:focus {
     }
     if (!foundAny) container.innerHTML = 'データなし';
 
-    // 3. 昼食タイプ別の傾向
     var lunchTypes = [
       { id: 'bento', label: '弁当(持参)' },
       { id: 'onigiri_low', label: 'おにぎり(低脂質)' },
@@ -962,7 +973,6 @@ input:focus, select:focus, textarea:focus {
     });
     $('lunchImpactList').innerHTML = lHtml;
 
-    // 4. ラン効果の可視化
     var runDiffSum = 0, runCount = 0;
     var restDiffSum = 0, restCount = 0;
     dates.forEach(function(d) {
@@ -982,7 +992,6 @@ input:focus, select:focus, textarea:focus {
     $('runImpactContent').innerHTML = '・<b>ラン実施日</b>の翌朝: 平均 <span style="color:' + ((runAvg||0)<=0?'#2e7d32':'#c62828') + ';">' + (runAvg!==null?(runAvg>0?'+':'')+runAvg+'kg':'-') + '</span> (' + runCount + '日)<br>' +
       '・<b>ランオフ日</b>の翌朝: 平均 <span style="color:' + ((restAvg||0)<=0?'#2e7d32':'#c62828') + ';">' + (restAvg!==null?(restAvg>0?'+':'')+restAvg+'kg':'-') + '</span> (' + restCount + '日)';
 
-    // 5. ノイズ要因の影響度
     var noiseTags = [
       { id: 'dinnerOut', label: '夜外食' },
       { id: 'alcohol', label: '飲酒' },
@@ -1014,7 +1023,6 @@ input:focus, select:focus, textarea:focus {
     });
     $('noiseImpactList').innerHTML = noiseHtml;
 
-    // 6. 間食タイミング比率
     var timeMap = { 'morning': 0, 'noon': 0, 'evening': 0, 'before_dinner': 0, 'after_dinner': 0 };
     var timeLabels = { 'morning': '朝', 'noon': '昼', 'evening': '夕方', 'before_dinner': '夕食前', 'after_dinner': '夕食後' };
     var totalSnackCal = 0;
@@ -1090,14 +1098,13 @@ input:focus, select:focus, textarea:focus {
       '<div style="font-size:11px;color:var(--text-sub);font-weight:600;margin-top:6px;">今月の正味カロリー: ' + (mNet > 0 ? '+' : '') + mNet + 'kcal</div>' +
       '<div style="font-size:13px;margin-top:2px;">' + fatHtml + '</div></div>';
 
-    // 全履歴タブには「今日以前」の過去ログのみを表示
     var todayStr = fmtDate(today);
     var html = '';
     var tm = { 'morning': '朝', 'noon': '昼', 'evening': '夕方', 'before_dinner': '夕食前', 'after_dinner': '夕食後' };
     var countPast = 0;
 
     dates.forEach(function(d) {
-      if (d === todayStr) return; // 今日の分は全履歴から除外し、入力画面に専任
+      if (d === todayStr) return;
       var r = raw[d];
       if (!r || !r.weight) return;
       countPast++;
@@ -1138,12 +1145,14 @@ input:focus, select:focus, textarea:focus {
       if (r.workStress) tgs.push("残業/ストレス");
       if (r.musclePain) tgs.push("筋肉痛/疲労");
 
-      var famTags = [];
-      if (r.famWife) famTags.push("妻");
-      if (r.famSon) famTags.push("息子");
       var famHtml = '';
-      if (famTags.length || r.familyMemo) {
-        famHtml = '<div class="family-log-box"><b>家族' + (famTags.length ? ' [' + famTags.join('・') + ']' : '') + ':</b> ' + (r.familyMemo || '（記録あり）') + '</div>';
+      if (Array.isArray(r.familyLogs) && r.familyLogs.length) {
+        var lines = r.familyLogs.map(function(f) {
+          return '・<b>' + (fm[f.who] || f.who) + ':</b> ' + f.text;
+        });
+        famHtml = '<div class="family-log-box">' + lines.join('<br>') + '</div>';
+      } else if (r.familyMemo) {
+        famHtml = '<div class="family-log-box"><b>家族:</b> ' + r.familyMemo + '</div>';
       }
 
       var moodLabel = md[r.mood] || r.mood || '';
@@ -1163,7 +1172,7 @@ input:focus, select:focus, textarea:focus {
     var raw = getSafeData();
     var dates = Object.keys(raw).sort();
     if (!dates.length) return null;
-    var csv = "日付(曜日),平日/休日,調子,体重,運動,運動消費(kcal),昼食,間食,間食摂取(kcal),差分(間食-消費kcal),外食飲酒等,体調・疲労,一言日記,家族対象,家族メモ\n";
+    var csv = "日付(曜日),平日/休日,調子,体重,運動,運動消費(kcal),昼食,間食,間食摂取(kcal),差分(間食-消費kcal),外食飲酒等,体調・疲労,一言日記,家族ログ\n";
     var tm = { 'morning': '朝', 'noon': '昼', 'evening': '夕方', 'before_dinner': '夕食前', 'after_dinner': '夕食後' };
     var dw = ['日', '月', '火', '水', '木', '金', '土'];
     dates.forEach(function(d) {
@@ -1193,11 +1202,14 @@ input:focus, select:focus, textarea:focus {
       if (r.noBM) cond.push("便通なし"); if (r.workStress) cond.push("残業/ストレス"); if (r.musclePain) cond.push("筋肉痛/疲労");
       var moodLabel = md[r.mood] || r.mood || '';
       
-      var famTags = [];
-      if (r.famWife) famTags.push("妻");
-      if (r.famSon) famTags.push("息子");
+      var fTxt = '';
+      if (Array.isArray(r.familyLogs) && r.familyLogs.length) {
+        fTxt = r.familyLogs.map(function(f) { return (fm[f.who] || f.who) + ':' + f.text; }).join(' / ');
+      } else if (r.familyMemo) {
+        fTxt = r.familyMemo;
+      }
 
-      csv += d + '(' + dayStr + '),' + (r.holiday ? '休日' : '平日') + ',' + moodLabel + ',' + r.weight + ',' + (ex.length ? ex.join('+') : '休') + ',' + burn + ',' + lTxt + ',' + sTxt + ',' + eat + ',' + (eat - burn) + ',' + (tgs.length ? tgs.join('・') : '無') + ',' + (cond.length ? cond.join('・') : '通常') + ',' + (r.memo ? '"' + r.memo.replace(/"/g, '""') + '"' : '') + ',' + (famTags.length ? famTags.join('・') : '') + ',' + (r.familyMemo ? '"' + r.familyMemo.replace(/"/g, '""') + '"' : '') + '\n';
+      csv += d + '(' + dayStr + '),' + (r.holiday ? '休日' : '平日') + ',' + moodLabel + ',' + r.weight + ',' + (ex.length ? ex.join('+') : '休') + ',' + burn + ',' + lTxt + ',' + sTxt + ',' + eat + ',' + (eat - burn) + ',' + (tgs.length ? tgs.join('・') : '無') + ',' + (cond.length ? cond.join('・') : '通常') + ',' + (r.memo ? '"' + r.memo.replace(/"/g, '""') + '"' : '') + ',' + (fTxt ? '"' + fTxt.replace(/"/g, '""') + '"' : '') + '\n';
     });
     return csv;
   }
